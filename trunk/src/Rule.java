@@ -17,6 +17,8 @@ public class Rule
 	public Rule(String host){
 		this.host = host;
 	}
+	public Rule() {
+	}
 	public String getHost() {
 		return host;
 	}
