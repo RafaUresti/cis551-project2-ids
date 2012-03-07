@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -40,7 +41,7 @@ public class RuleParser
 	private void getData(String nextLine) {
 		
 	Scanner s= new Scanner(nextLine);
-	Rule r;
+	Rule r = new Rule();
 	String title=null;
 	String value=null;
 	s.useDelimiter("=");
@@ -85,7 +86,7 @@ public class RuleParser
 		return sr;
 	}
 
-	public List<ProtocolRule> createProtocolRule(String nxtLine){
+	public ProtocolRule createProtocolRule(String nxtLine){
 		Scanner s= new Scanner(nxtLine);
 		ProtocolRule pr = new ProtocolRule();
 		String title=null;
@@ -103,9 +104,11 @@ public class RuleParser
 				pr.setIp(value);
 			if(title.equals("protocol"))
 				pr.setProtocol(value);
-			if(title.equals("subrule"))
-				sr.setRecv(value);
+			//if(title.equals("subrule"))
+				//pr.setSubRule(sub_rule)(value);
 			
-		return pr;
+		
+			return pr;
 	}
+	
 }

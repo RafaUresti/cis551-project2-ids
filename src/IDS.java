@@ -1,10 +1,11 @@
+import java.io.IOException;
 import java.util.List;
 
 import net.sourceforge.jpcap.capture.PacketCapture;
 
 public class IDS
 {
-	public static void main(String[] args)
+	public static void main(String[] args) throws IOException
 	{
 		// Check the arguments.
 		if (args.length < 2)
