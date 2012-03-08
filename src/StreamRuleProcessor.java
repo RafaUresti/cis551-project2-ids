@@ -14,6 +14,6 @@ public class StreamRuleProcessor
 	public void processRules(TCPPacket packet)
 	{
 		System.out.println("Stream Processing: "+
-				packet.toColoredString(true));
+				packet.toColoredVerboseString(true));
 	}
 }
