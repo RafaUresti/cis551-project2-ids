@@ -13,9 +13,8 @@ public class StreamRuleProcessor
 	public StreamRuleProcessor(List<Rule> rules)
 	{
 		this.rules = rules;
-
 	}
-
+	
 	public void processRules(TCPPacket packet)
 	{
 		System.out.println("Stream Processing: "+
