@@ -130,12 +130,12 @@ public class Stream {
 					
 					//We get back the data and cast it into a string
 					String data =  new String(packet.getData());
-					if (offset>this.send.capacity()) {
-						this.recv.append(data);
+					if (offset>this.send.length()) {
+						this.send.append(data);
 					}
 					else {
-						this.recv.insert(offset, data);
-						System.out.println(this.recv.toString());
+						this.send.insert(offset, data);
+						System.out.println(this.send.toString());
 					}
 				}
 			}
