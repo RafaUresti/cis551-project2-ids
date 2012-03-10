@@ -47,7 +47,6 @@ public class StreamRuleProcessor
 			}
 			else {
 				//If this is the first time this packet is seen
-				if (packet.isSyn()) {
 					//It must be that the connection is establishing	
 					
 					//We create a new list of TCPPackets, and we add it to the hashtable
@@ -60,12 +59,7 @@ public class StreamRuleProcessor
 					streams.put(key,stream);
 					
 					//We Check if the stream follow the rules
-					//here here
-					
-				}
-				else {
-					System.out.println("Error: First packet, no SYN Flag");
-				}
+					//here here						
 			}
 		}
 		else {//This packet has been sent by the host
@@ -95,7 +89,6 @@ public class StreamRuleProcessor
 			}
 			else {
 				//If this is the first time this packet is seen
-				if (packet.isSyn()) {
 					//It must be that the connection is establishing	
 					
 					//We create a new list of TCPPackets, and we add it to the hashtable
@@ -108,12 +101,7 @@ public class StreamRuleProcessor
 					streams.put(key,stream);
 					
 					//We Check if the stream follow the rules
-					//here here
-					
-				}
-				else {
-					System.out.println("Error: First packet, no SYN Flag");
-				}
+					//here here					
 			}
 		}
 	}
