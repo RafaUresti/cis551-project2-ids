@@ -1,4 +1,6 @@
+import java.io.UnsupportedEncodingException;
 import java.lang.StringBuffer;
+import java.math.BigInteger;
 
 import java.util.Hashtable;
 
@@ -75,7 +77,7 @@ public class Stream {
 	}
 	
 	//Constructor do add a new packet to the stream
-	public void addPacket (TCPPacket packet, String recORsent) {
+	public void addPacket (TCPPacket packet, String recORsent) throws UnsupportedEncodingException {
 		if (packet.isFin()||packet.isRst()) {
 			//The communication is over
 			this.finIsSet = true; 
@@ -125,8 +127,22 @@ public class Stream {
 						this.gatherData("recv");
 					}
 					if (!(this.dataRecv==null)){
-					System.out.println("received :" + new String(dataRecv));
+						//ASCII string of data received
+						System.out.println("received :" + new String(dataRecv));
+						
+						//Hex version of data received
+						String hexRes = null;
+						for (int i=0; i<dataRecv.length; i++){
+							hexRes+=Integer.toHexString(dataRecv[i]);
+						}
+						System.out.println("received to hex : "+ hexRes);
 					}
+					
+					//Hex version of UTF-8 String version of "now I own your computer"
+					String nowIown = "Now I own your computer";
+					String nowIhex = String.format("%x", new BigInteger(nowIown.getBytes("UTF-8")));
+					System.out.println("Hex value of nowIown : "+nowIhex);
+					
 				}
 			}
 			else {
@@ -163,8 +179,9 @@ public class Stream {
 						//We call the function to check if the right packet(s) arrived earlier
 						this.gatherData("send");
 					}
-					
+					if (!(this.dataSend==null)){
 					System.out.println("Sent :" + new String(dataSend));
+					}
 				}
 			}
 		}
