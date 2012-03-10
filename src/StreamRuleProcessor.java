@@ -17,8 +17,8 @@ public class StreamRuleProcessor
 	
 	public void processRules(TCPPacket packet)
 	{
-		System.out.println("Stream Processing: "+
-				packet.toColoredVerboseString(true));
+//		System.out.println("Stream Processing: "+
+//				packet.toColoredVerboseString(true));
 		
 		if (packet.getDestinationAddress().equals(host))
 		{//This packet has been received by the host
