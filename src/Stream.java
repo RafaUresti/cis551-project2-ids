@@ -1,9 +1,8 @@
 import java.io.UnsupportedEncodingException;
-import java.lang.StringBuffer;
 import java.math.BigInteger;
-
 import java.util.Hashtable;
 
+import net.sourceforge.jpcap.util.ArrayHelper;
 import net.sourceforge.jpcap.net.TCPPacket;
 
 public class Stream {
@@ -92,9 +91,6 @@ public class Stream {
 				}
 				else {
 					//This is a data packet
-					System.out.println(this.recIniSeqNumber);
-					System.out.println(this.recCurrentSeqNumber);
-					System.out.println(packet.getSequenceNumber());
 					
 					//We get back the data
 					
@@ -106,11 +102,8 @@ public class Stream {
 						if (dataRecv==null) {
 							this.dataRecv = packet.getData();	
 						}
-						else {
-							byte[] newDataArray = new byte[this.dataRecv.length+packet.getData().length];
-							System.arraycopy(this.dataRecv, 0, newDataArray, 0, this.dataRecv.length);
-							System.arraycopy(packet.getData(), 0, newDataArray, this.dataRecv.length, packet.getData().length);		
-							this.dataRecv = newDataArray;	
+						else {		
+							this.dataRecv = ArrayHelper.join(this.dataRecv, packet.getData());	
 						}
 						
 						//We now wait for the next packet
@@ -160,11 +153,8 @@ public class Stream {
 						if (this.dataSend==null) {
 							this.dataSend = packet.getData();	
 						}
-						else {
-							byte[] newDataArray = new byte[this.dataSend.length+packet.getData().length];
-							System.arraycopy(this.dataSend, 0, newDataArray, 0, this.dataSend.length);
-							System.arraycopy(packet.getData(), 0, newDataArray, this.dataSend.length, packet.getData().length);		
-							this.dataSend = newDataArray;	
+						else {		
+							this.dataSend = ArrayHelper.join(this.dataSend, packet.getData());	
 						}
 						
 						//We now wait for the next packet
@@ -193,11 +183,8 @@ public class Stream {
 			//We compute the received data
 			while (this.dataRecvWait.containsKey(this.recCurrentSeqNumber)) {
 				byte[] dataToadd = this.dataRecvWait.get(this.recCurrentSeqNumber);
-				//We add the data
-				byte[] newDataArray = new byte[this.dataRecv.length+dataToadd.length];
-				System.arraycopy(this.dataRecv, 0, newDataArray, 0, this.dataRecv.length);
-				System.arraycopy(dataToadd, 0, newDataArray, this.dataRecv.length, dataToadd.length);		
-				this.dataRecv = newDataArray;
+				//We add the data		
+				this.dataRecv = ArrayHelper.join(this.dataRecv, dataToadd);
 				
 				this.recCurrentSeqNumber+=dataToadd.length;
 			}
@@ -206,11 +193,8 @@ public class Stream {
 			//We compute the sent data
 			while (this.dataSentWait.containsKey(this.sendCurrentSeqNumber)) {
 				byte[] dataToadd = this.dataSentWait.get(this.sendCurrentSeqNumber);
-				//We add the data
-				byte[] newDataArray = new byte[this.dataSend.length+dataToadd.length];
-				System.arraycopy(this.dataSend, 0, newDataArray, 0, this.dataSend.length);
-				System.arraycopy(dataToadd, 0, newDataArray, this.dataSend.length, dataToadd.length);		
-				this.dataSend = newDataArray;
+				//We add the data		
+				this.dataSend = ArrayHelper.join(this.dataSend, dataToadd);
 				
 				this.sendCurrentSeqNumber++;
 			}
