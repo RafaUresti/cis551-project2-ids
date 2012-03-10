@@ -1,7 +1,5 @@
 import java.lang.StringBuffer;
 
-import com.sun.corba.se.impl.encoding.TypeCodeOutputStream;
-
 import net.sourceforge.jpcap.net.TCPPacket;
 
 public class Stream {
@@ -10,10 +8,10 @@ public class Stream {
 	private int destport;
 	private String ip;
 	
-	private long sendIniSeqNumber;
+	private long sendIniSeqNumber=-1;
 	private StringBuffer send = new StringBuffer();
 	
-	private long recIniSeqNumber;
+	private long recIniSeqNumber=-1;
 	private StringBuffer recv = new StringBuffer();
 	
 	private boolean finIsSet = false;
@@ -93,8 +91,8 @@ public class Stream {
 		else {
 			if (recORsent.equals("recv")) {
 				//This packet was received by the host
-				if (packet.isSyn()) {
-					//It must be the answer to the first Syn
+				if (this.recIniSeqNumber==-1) {
+					//It must be the first received packet
 					this.recIniSeqNumber = packet.getSequenceNumber();
 				}
 				else {
@@ -117,8 +115,8 @@ public class Stream {
 			}
 			else {
 				//This packet was sent by the host
-				if (packet.isSyn()) {
-					//It must be the answer to the first Syn
+				if (this.sendIniSeqNumber==-1) {
+					//It must be the first packet sent
 					this.sendIniSeqNumber = packet.getSequenceNumber();
 				}
 				else {
