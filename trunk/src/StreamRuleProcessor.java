@@ -23,9 +23,12 @@ public class StreamRuleProcessor
 		
 		if (packet.getDestinationAddress().equals(host))
 		{//This packet has been received by the host
+			
+			//We generate a key which will identify the stream
 			String key = packet.getSourceAddress() + ":" +
 					packet.getDestinationPort() + ":" +
 					packet.getSourcePort();
+			
 			if (connections.containsKey(key)) { 
 				//There is a stream that corresponds to this packet
 				
@@ -53,7 +56,6 @@ public class StreamRuleProcessor
 			}
 			else {
 				//If this is the first time this packet is seen
-					//It must be that the connection is establishing	
 					
 					//We create a new list of TCPPackets, and we add it to the hashtable
 					ArrayList<TCPPacket> connection = new ArrayList<TCPPacket>();
@@ -69,9 +71,12 @@ public class StreamRuleProcessor
 			}
 		}
 		else {//This packet has been sent by the host
+			
+			//We generate a key which will identify the stream
 			String key = packet.getDestinationAddress() + ":" +
 					packet.getDestinationPort() + ":" +
 					packet.getSourcePort();
+			
 			if (connections.containsKey(key)) { 
 				//There is a stream that corresponds to this packet
 				
@@ -79,18 +84,20 @@ public class StreamRuleProcessor
 				connections.get(key).add(packet);
 				
 				//We add the packet to the new stream
-				try {
-					streams.get(key).addPacket(packet, "send");
-				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+					try {
+						streams.get(key).addPacket(packet, "send");
+					} catch (UnsupportedEncodingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				
 				
 				//We check if the stream follow the rules
 				//here here
 				
 				if (streams.get(key).isFinIsSet()) {
 					//If the connection is over, we print the stream
+					System.out.println("*****Stream over*****");
 					System.out.println(streams.get(key).toString());
 					//And we remove the connection from the hashtable
 					connections.remove(key);
