@@ -1,3 +1,4 @@
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import net.sourceforge.jpcap.net.TCPPacket;
@@ -32,7 +33,12 @@ public class StreamRuleProcessor
 				connections.get(key).add(packet);
 				
 				//We add the packet to the new stream
-				streams.get(key).addPacket(packet, "recv");
+				try {
+					streams.get(key).addPacket(packet, "recv");
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				
 				//We check if the stream follow the rules
 				//here here
@@ -73,7 +79,12 @@ public class StreamRuleProcessor
 				connections.get(key).add(packet);
 				
 				//We add the packet to the new stream
-				streams.get(key).addPacket(packet, "send");
+				try {
+					streams.get(key).addPacket(packet, "send");
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				
 				//We check if the stream follow the rules
 				//here here
