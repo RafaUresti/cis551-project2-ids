@@ -1,6 +1,10 @@
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.regex.*;
+
 
 import net.sourceforge.jpcap.util.ArrayHelper;
 import net.sourceforge.jpcap.net.TCPPacket;
@@ -196,5 +200,70 @@ public class Stream {
 		ret += "data received : " + new String(dataRecv) + "\n";
 		}
 		return ret;
+	}
+	
+	//Check if a given stream matches some TCP stream rule(s)
+	public ArrayList<Rule> matchesRules(ArrayList<Rule> ruleSet) {
+		ArrayList<Rule> matchedRules = new ArrayList<Rule>();
+		Rule currentRule;
+		StreamRule currentStreamRule;
+		boolean firstMatch = false;
+		boolean recMatch = false;
+		boolean sendMatch = false;
+		Pattern recPattern;
+		Pattern sendPattern;
+		Matcher m;
+		Iterator<Rule> nextRule = ruleSet.listIterator();
+		
+		while (nextRule.hasNext()) {
+			currentRule = nextRule.next();
+			
+			//We only want to test 
+			if (currentRule.getSrule()!=null) {
+				currentStreamRule = currentRule.getSrule();
+				firstMatch = (currentStreamRule.getSrcPort()==Integer.toString(this.getSrcport())) && (currentStreamRule.getDstPort()==Integer.toString(this.getDestport()))&&(currentStreamRule.getIp()==this.getIp());
+				
+				//If the first elements of the rule are matched, then we can try to match the regular expression(s)
+				if (firstMatch) {
+					
+					//Regular expression over what is received
+					if (currentStreamRule.getRecv()!=null) {
+						recPattern = Pattern.compile(currentStreamRule.getRecv());
+						String rec = null;
+						try {
+							rec = new String (this.dataRecv,"ISO-8856-1");
+						} catch (UnsupportedEncodingException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						m = recPattern.matcher(rec);
+						recMatch = m.find();
+					}
+					
+					//Regular expression over what is sent
+					if (currentStreamRule.getSnd()!=null) {
+						sendPattern = Pattern.compile(currentStreamRule.getSnd());
+						String sen = null;
+						try {
+							sen = new String (this.dataSend, "ISO-8856-1");
+						} catch (UnsupportedEncodingException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						m = sendPattern.matcher(sen);
+						sendMatch = m.find();
+					}
+					
+					//If everything is matched
+					if (recMatch&&sendMatch) {
+						
+						//We add the rule that was matched to the list
+						matchedRules.add(currentRule);
+					}
+				}
+				
+			}
+		}
+		return matchedRules;
 	}
 }
