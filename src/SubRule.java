@@ -16,7 +16,7 @@ public class SubRule {
 
 	public void setData(String data) {
 		this.data = data;
-		pattern = Pattern.compile(data);
+		pattern = Pattern.compile(".*"+data+".*");
 	}
 
 	public Pattern getPattern() {
