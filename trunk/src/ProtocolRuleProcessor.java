@@ -68,9 +68,8 @@ public class ProtocolRuleProcessor
 			}
 			String data = new String(packet.getData());
 			SubRule srule = prule.getSubRule().get(subRule);
-			
-			if ((isReceive && srule.getRecv()!=null && data.contains(srule.getRecv())) ||
-				(!isReceive && srule.getSnd()!=null && data.contains(srule.getSnd())))
+			if ((isReceive && srule.isReceived() && srule.getPattern().matcher(data).matches()) ||
+				(!isReceive && !srule.isReceived() && srule.getPattern().matcher(data).matches()))
 			{
 				if (subRule + 1 == prule.getSubRule().size())
 				{
