@@ -1,5 +1,7 @@
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.sourceforge.jpcap.net.Packet;
 import net.sourceforge.jpcap.net.UDPPacket;
@@ -7,10 +9,12 @@ public class ProtocolRuleProcessor
 {
 	private List<Rule> udpRules;
 	private List<Rule> tcpRules;
+	private Map<Rule, Integer> udpMap;
 	private String host;
 	
 	public ProtocolRuleProcessor(List<Rule> rules)
 	{
+		udpMap = new HashMap<Rule, Integer>();
 		if (rules.size() > 0)
 		{
 			host = rules.get(0).getHost();
@@ -40,11 +44,13 @@ public class ProtocolRuleProcessor
 			if (!prule.getSrcPort().equals("any") &&
 			    packet.getSourcePort() != Integer.parseInt(rule.getPrule().getSrcPort()))
 			{
+				udpMap.remove(rule);
 				continue;
 			}
 			if (!prule.getDstPort().equals("any") &&
 				packet.getDestinationPort() != Integer.parseInt(prule.getDstPort()))
 			{
+				udpMap.remove(rule);
 				continue;
 			}
 			
@@ -52,17 +58,33 @@ public class ProtocolRuleProcessor
 				((isReceive && !packet.getSourceAddress().equals(prule.getIp())) ||
 				 (!isReceive && !packet.getDestinationAddress().equals(prule.getIp()))))
 			{
+				udpMap.remove(rule);
 				continue;
 			}
-			
-			String data = new String(packet.getData());
-			for (SubRule srule : prule.getSubRule())
+			Integer subRule = udpMap.get(rule);
+			if (subRule == null)
 			{
-				if ((isReceive && data.contains(srule.getRecv())) ||
-					(!isReceive && data.contains(srule.getSnd())))
+				subRule = 0;
+			}
+			String data = new String(packet.getData());
+			SubRule srule = prule.getSubRule().get(subRule);
+			
+			if ((isReceive && srule.getRecv()!=null && data.contains(srule.getRecv())) ||
+				(!isReceive && srule.getSnd()!=null && data.contains(srule.getSnd())))
+			{
+				if (subRule + 1 == prule.getSubRule().size())
 				{
+					udpMap.remove(rule);
 					System.out.println("Rule: "+rule.getName());
 				}
+				else
+				{
+					udpMap.put(rule, subRule+1);
+				}
+			}
+			else
+			{
+				udpMap.remove(rule);
 			}
 		}
 	}
