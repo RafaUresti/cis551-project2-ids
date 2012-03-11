@@ -31,32 +31,16 @@ public class Stream {
 		return srcport;
 	}
 
-	public void setSrcport(int srcport) {
-		this.srcport = srcport;
-	}
-
 	public int getDestport() {
 		return destport;
-	}
-
-	public void setDestport(int destport) {
-		this.destport = destport;
 	}
 
 	public String getIp() {
 		return ip;
 	}
 
-	public void setIp(String ip) {
-		this.ip = ip;
-	}
-
 	public boolean isFinIsSet() {
 		return finIsSet;
-	}
-
-	public void setFinIsSet(boolean finIsSet) {
-		this.finIsSet = finIsSet;
 	}
 
 	//Constructor to initialize the stream
