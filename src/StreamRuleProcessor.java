@@ -7,6 +7,7 @@ import java.util.Hashtable;
 public class StreamRuleProcessor
 {
 	private List<Rule> rules;
+	private ArrayList<Rule> matchedRules = new ArrayList<Rule> ();
 	private Hashtable<String, ArrayList<TCPPacket>> connections = new Hashtable<String, ArrayList<TCPPacket>>();
 	private Hashtable<String, Stream> streams = new Hashtable<String, Stream>();
 	private String host = "192.168.0.1";
@@ -20,6 +21,7 @@ public class StreamRuleProcessor
 	{
 //		System.out.println("Stream Processing: "+
 //				packet.toColoredVerboseString(true));
+
 		
 		if (packet.getDestinationAddress().equals(host))
 		{//This packet has been received by the host
@@ -39,12 +41,12 @@ public class StreamRuleProcessor
 				try {
 					streams.get(key).addPacket(packet, "recv");
 				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
-				//We check if the stream follow the rules
-				//here here
+				//We check if the stream match some rule(s)
+				this.matchedRules = streams.get(key).matchesRules(this.rules);
+				
 				
 				if (streams.get(key).isFinIsSet()) {
 					//If the connection is over, we print the stream
@@ -87,7 +89,6 @@ public class StreamRuleProcessor
 					try {
 						streams.get(key).addPacket(packet, "send");
 					} catch (UnsupportedEncodingException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				
