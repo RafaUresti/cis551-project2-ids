@@ -1,65 +1,56 @@
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 
 public class SubRule {
 
-	private String snd;
-	private String recv;
-	private ArrayList<String> sndflags;	
-	private ArrayList<String> recvflags;	
+	private String data;
+	private Pattern pattern;
+	private boolean isReceived;
+	private ArrayList<String> flags;
 	
-	public String getSnd() {
-		return snd;
-	}
-	
-	public void setSnd(String snd) {
-		this.snd = snd;
-	}
-	
-	public String getRecv() {
-		return recv;
-	}
-	
-	public void setRecv(String recv) {
-		this.recv = recv;
+	public String getData() {
+		return data;
 	}
 
-	public ArrayList<String> getSndflags() {
-		return sndflags;
+	public void setData(String data) {
+		this.data = data;
+		pattern = Pattern.compile(data);
 	}
 
-	public void setSndflags(ArrayList<String> sndflags) {
-		this.sndflags = sndflags;
+	public Pattern getPattern() {
+		return pattern;
 	}
 
-	public ArrayList<String> getRecvflags() {
-		return recvflags;
+	public void setPattern(Pattern pattern) {
+		this.pattern = pattern;
 	}
 
-	public void setRecvflags(ArrayList<String> recvflags) {
-		this.recvflags = recvflags;
+	public boolean isReceived() {
+		return isReceived;
 	}
+
+	public void setReceived(boolean isReceived) {
+		this.isReceived = isReceived;
+	}
+
+	public ArrayList<String> getFlags() {
+		return flags;
+	}
+
+	public void setFlags(ArrayList<String> flags) {
+		this.flags = flags;
+	}
+
 	public void print_rules() {
-		if(snd!=null){
-			System.out.println("Send : "+ snd);
-		}
-		if(recv!=null){
-			System.out.println("Recv : "+ recv);
-		}
-		if(sndflags!=null){
-			int c =0;
-			for(Iterator<String> i= sndflags.iterator(); i.hasNext();){
-				System.out.println("Send Flag "+ (c+1) +" "+i.next());
-				c ++;
-			}
-		}
-		if(recvflags!=null){
-			int c =0;
-			for(Iterator<String> i= recvflags.iterator(); i.hasNext();){
-				System.out.println("Recv Flag "+ (c+1) +" "+i.next());
-				c ++;
-			}
+		System.out.println((isReceived ? "Recv : " : "Send : ")+ data);
+		
+		int c =0;
+		for(Iterator<String> i= flags.iterator(); i.hasNext();){
+			System.out.println((isReceived ? "Recv Flag : " : "Send Flag : ")+ 
+								(c+1) +" "+i.next());
+			c ++;
 		}
 	}
 }

@@ -67,17 +67,19 @@ public class RuleParser
 											}
 										}
 										if(title.equals("send")){
+											sub.setReceived(false);
 											String[] reg = value.split("with");
-											sub.setSnd(reg[0].trim());
+											sub.setData(reg[0].trim());
 											if(flags!=null)
-												sub.setSndflags(flags);
+												sub.setFlags(flags);
 										}
 
 										else if(title.equals("recv")){
+											sub.setReceived(true);
 											String[] reg = value.split("with");
-											sub.setRecv(reg[0].trim());
+											sub.setData(reg[0].trim());
 											if(flags!=null)
-												sub.setRecvflags(flags);
+												sub.setFlags(flags);
 										}
 										sr.add(sub);
 									}
