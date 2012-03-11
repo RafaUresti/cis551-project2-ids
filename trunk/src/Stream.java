@@ -3,6 +3,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.regex.*;
 
 
@@ -203,7 +204,7 @@ public class Stream {
 	}
 	
 	//Check if a given stream matches some TCP stream rule(s)
-	public ArrayList<Rule> matchesRules(ArrayList<Rule> ruleSet) {
+	public ArrayList<Rule> matchesRules(List<Rule> ruleSet) {
 		ArrayList<Rule> matchedRules = new ArrayList<Rule>();
 		Rule currentRule;
 		StreamRule currentStreamRule;
