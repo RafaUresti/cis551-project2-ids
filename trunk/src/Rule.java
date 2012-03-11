@@ -4,8 +4,8 @@ public class Rule
 {
 	private String host; // the ip address of the host
 	private String name; 				// the name of the rule that should be printed when a match occurs
-	private StreamRule s_rule; 			//the stream rule
-	private ProtocolRule p_rule;		//the protocol rule
+	private StreamRule s_rule=null; 			//the stream rule
+	private ProtocolRule p_rule=null;		//the protocol rule
 	
 	
 	public Rule() {
