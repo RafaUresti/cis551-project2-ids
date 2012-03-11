@@ -50,6 +50,7 @@ public class StreamRuleProcessor
 				
 				if (streams.get(key).isFinIsSet()) {
 					//If the connection is over, we print the stream
+					System.out.println("*****Stream over*****");
 					System.out.println(streams.get(key).toString());
 					//And we remove the connection from the hashtables
 					connections.remove(key);
