@@ -1,8 +1,10 @@
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import net.sourceforge.jpcap.net.TCPPacket;
 import java.util.Hashtable;
+
 
 public class StreamRuleProcessor
 {
@@ -22,7 +24,6 @@ public class StreamRuleProcessor
 //		System.out.println("Stream Processing: "+
 //				packet.toColoredVerboseString(true));
 
-		
 		if (packet.getDestinationAddress().equals(host))
 		{//This packet has been received by the host
 			
@@ -46,12 +47,23 @@ public class StreamRuleProcessor
 				
 				//We check if the stream match some rule(s)
 				this.matchedRules = streams.get(key).matchesRules(this.rules);
-				
+				//We print the matched rules
+				if (!this.matchedRules.isEmpty()) {
+					//We print out the corresponding connection and the number of packets that were received during this connection
+					System.out.println("Key :" + key);
+					System.out.println("Number of packets received during this connection : "+ this.connections.get(key).size());
+					Iterator<Rule> itRule = this.matchedRules.iterator();
+					while (itRule.hasNext()) {
+						System.out.println("Rule matched : "+ itRule.next().getName());
+					}
+				}
+				//Then we can empty the matchedRules list
+				this.matchedRules.clear();
 				
 				if (streams.get(key).isFinIsSet()) {
 					//If the connection is over, we print the stream
 					System.out.println("*****Stream over*****");
-					System.out.println(streams.get(key).toString());
+					streams.get(key).toString();
 					//And we remove the connection from the hashtables
 					connections.remove(key);
 					streams.remove(key);
@@ -69,16 +81,27 @@ public class StreamRuleProcessor
 					Stream stream = new Stream(packet, "recv");
 					streams.put(key,stream);
 					
-					//We Check if the stream follow the rules
-					//here here						
+					//We check if the stream match some rule(s)
+					this.matchedRules = streams.get(key).matchesRules(this.rules);
+					//We print the matched rules
+					if (!this.matchedRules.isEmpty()) {
+						System.out.println("Key :" + key);
+						System.out.println("Number of packets received during this connection : "+ this.connections.get(key).size());
+						Iterator<Rule> itRule = this.matchedRules.iterator();
+						while (itRule.hasNext()) {
+							System.out.println("Rule matched : "+ itRule.next().getName());
+						}
+					}
+					//Then we can empty the matchedRules list
+					this.matchedRules.clear();
 			}
 		}
 		else {//This packet has been sent by the host
 			
 			//We generate a key which will identify the stream
 			String key = packet.getDestinationAddress() + ":" +
-					packet.getDestinationPort() + ":" +
-					packet.getSourcePort();
+					packet.getSourcePort() + ":" +
+					packet.getDestinationPort();
 			
 			if (connections.containsKey(key)) { 
 				//There is a stream that corresponds to this packet
@@ -94,18 +117,28 @@ public class StreamRuleProcessor
 					}
 				
 				
-				//We check if the stream follow the rules
-				//here here
+				//We check if the stream match some rule(s)
+				this.matchedRules = streams.get(key).matchesRules(this.rules);
+				//We print the matched rules
+				if (!this.matchedRules.isEmpty()) {
+					System.out.println("Key :" + key);
+					System.out.println("Number of packets received during this connection : "+ this.connections.get(key).size());
+					Iterator<Rule> itRule = this.matchedRules.iterator();
+					while (itRule.hasNext()) {
+						System.out.println("Rule matched : "+ itRule.next().getName());
+					}
+				}
+				//Then we can empty the matchedRules list
+				this.matchedRules.clear();
 				
 				if (streams.get(key).isFinIsSet()) {
 					//If the connection is over, we print the stream
 					System.out.println("*****Stream over*****");
-					System.out.println(streams.get(key).toString());
+					streams.get(key).toString();
 					//And we remove the connection from the hashtable
 					connections.remove(key);
 					streams.remove(key);
-				}
-				
+				}			
 			}
 			else {
 				//If this is the first time this packet is seen
@@ -120,8 +153,19 @@ public class StreamRuleProcessor
 					Stream stream = new Stream(packet, "send");
 					streams.put(key,stream);
 					
-					//We Check if the stream follow the rules
-					//here here					
+					//We check if the stream match some rule(s)
+					this.matchedRules = streams.get(key).matchesRules(this.rules);
+					//We print the matched rules
+					if (!this.matchedRules.isEmpty()) {
+						System.out.println("Key :" + key);
+						System.out.println("Number of packets received during this connection : "+ this.connections.get(key).size());
+						Iterator<Rule> itRule = this.matchedRules.iterator();
+						while (itRule.hasNext()) {
+							System.out.println("Rule matched : "+ itRule.next().getName());
+						}
+					}
+					//Then we can empty the matchedRules list
+					this.matchedRules.clear();
 			}
 		}
 	}
