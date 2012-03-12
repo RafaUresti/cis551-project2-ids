@@ -38,7 +38,7 @@ public class ProtocolRuleProcessor
 		{
 			try{
 			processTCP((TCPPacket)packet);
-			}catch(Exception exc) {System.out.println();}
+			}catch(Exception exc) {exc.printStackTrace();}
 		}
 	}
 
@@ -58,16 +58,11 @@ public class ProtocolRuleProcessor
 			conversation = new Conversation(host);
 			tcpMap.put(key, conversation);
 		}
-		else {
-			conversation.addPacket(packet);
-		}
+		conversation.addPacket(packet);
 		
 		conversation.matchesRules(tcpRules);
 		
 		if (conversation.isFinished()) {
-			//If the connection is over, we print the stream
-			System.out.println("*****Stream over*****");
-			System.out.println(conversation.toString());
 			tcpMap.remove(key);
 		}
 	}	
@@ -107,6 +102,7 @@ public class ProtocolRuleProcessor
 			if ((isReceive && srule.isReceived() && srule.getPattern().matcher(data).find()) ||
 				(!isReceive && !srule.isReceived() && srule.getPattern().matcher(data).find())) {
 				if (subRule + 1 == prule.getSubRule().size()) {
+					System.out.println("Rule: " +rule.getName());
 					udpMap.remove(rule);
 				}
 				else {

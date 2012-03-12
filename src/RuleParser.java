@@ -59,28 +59,21 @@ public class RuleParser
 										pr.setProtocol(value);
 									if(title.equals("send")||title.equals("recv")){
 										SubRule sub = new SubRule();
-									   ArrayList<String> flags = new ArrayList<String>();
+									   ArrayList<String> flags = null; 
 										if(line.length > 2){ //has flags
 											char[] f = line[2].toLowerCase().toCharArray();
+											flags = new ArrayList<String>();
 											for(int c= 0; c< f.length; c++){
 												flags.add(Flags.getFlag(f[c]));	
 											}
 										}
-										if(title.equals("send")){
-											sub.setReceived(false);
-											String[] reg = value.split("with");
-											sub.setData(reg[0].trim());
-											if(flags!=null)
-												sub.setFlags(flags);
-										}
-
-										else if(title.equals("recv")){
+										if(title.equals("recv")){
 											sub.setReceived(true);
-											String[] reg = value.split("with");
-											sub.setData(reg[0].trim());
-											if(flags!=null)
-												sub.setFlags(flags);
 										}
+										String[] reg = value.split("with");
+										sub.setData(reg[0].trim());
+										if(flags!=null)
+											sub.setFlags(flags);
 										sr.add(sub);
 									}
 								}

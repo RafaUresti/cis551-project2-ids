@@ -30,57 +30,67 @@ public class Conversation
 	public void addPacket(TCPPacket packet)
 	{
 		if (packet.isFin()||packet.isRst()) {
-			//The communication is over
+			System.out.println("Finished");
 			this.finished = true; 
 		}
 		if (isReceived(packet)) {
 			if (recvSequence == -1) {
-				recvSequence = packet.getSequenceNumber()+1;
+				recvSequence = packet.getSequenceNumber()+packet.getData().length;
+				//System.out.println("recv "+recvSequence+" first " +new String(packet.getData()));
+				if (packet.getData().length == 0) recvSequence++;
 				packets.add(packet);
 			}
 			else if (recvSequence == packet.getSequenceNumber()) {
-				addAdditional(packet, recvSequence, recvWaiting);
-				recvSequence++;
+				recvSequence = addAdditional(packet, recvSequence, recvWaiting);
+				//System.out.println("recv "+recvSequence+" added"+new String(packet.getData()));
 			}
 			else {
 				recvWaiting.put(packet.getSequenceNumber(), packet);
+				//System.out.println("recv "+recvSequence+" waiting"+new String(packet.getData()));
 			}
 		}
 		else {
 			if (sendSequence == -1) {
-				sendSequence = packet.getSequenceNumber()+1;
+				sendSequence = packet.getSequenceNumber()+packet.getData().length;
+				//System.out.println("send "+recvSequence+" first " +new String(packet.getData()));
+				if (packet.getData().length == 0) sendSequence++;
 				packets.add(packet);
 			}
 			else if (sendSequence == packet.getSequenceNumber()) {
-				addAdditional(packet, sendSequence, sendWaiting);
-				sendSequence++;
+				sendSequence = addAdditional(packet, sendSequence, sendWaiting);
+				//System.out.println("send "+recvSequence+" added"+new String(packet.getData()));
 			}
 			else {
 				sendWaiting.put(packet.getSequenceNumber(), packet);
+				//System.out.println("send "+recvSequence+" waiting"+new String(packet.getData()));
 			}
 		}
 	}
 	
-	private void addAdditional(TCPPacket packet, long sequence, Map<Long, TCPPacket> waiting)
+	private long addAdditional(TCPPacket packet, long sequence, Map<Long, TCPPacket> waiting)
 	{
 		packets.add(packet);
+		sequence +=packet.getData().length;
 		TCPPacket p = null;
 		do {
-			p = waiting.get(++sequence);
+			p = waiting.get(sequence);
 			if (p != null) {
 				packets.add(p);
 				waiting.remove(sequence);
+				sequence+=packet.getData().length;
 			}
 		} while (p != null);
+		return sequence;
 	}
 	
 	public void matchesRules(List<Rule> rules) {
-		for (int i=ruleChecked;i<packets.size();i++) {
+		for (int i=0;i<packets.size();i++) {
 			for (Rule rule : rules) {
 				if (basicCheck(rule, packets.get(0))) {
+						int skipCount = 0;
 					for (int j=0;j<rule.getPrule().getSubRule().size();j++) {
-						if (i+j < packets.size() && !isSkippable(packets.get(i+j))) {
-							TCPPacket packet = packets.get(i+j);
+						if (i+j+skipCount < packets.size() && !isSkippable(packets.get(i+j+skipCount))) {
+							TCPPacket packet = packets.get(i+j+skipCount);
 							boolean isReceive = isReceived(packet);
 							String data = null;
 							try
@@ -91,13 +101,21 @@ public class Conversation
 									(isReceive && srule.isReceived() && srule.getPattern().matcher(data).find()) ||
 									(!isReceive && !srule.isReceived() && srule.getPattern().matcher(data).find())) {
 								if (j + 1 == rule.getPrule().getSubRule().size()) {
-									System.out.println("I got here");
+									System.out.println("Rule: " +rule.getName());
 								}
 							}
 							else {
+								//System.out.println("Rule: "+rule.getName());
+								//System.out.println(j+" "+isReceive+" " + srule.isReceived() + " " + srule.getPattern().matcher(data).find() + " " + flagsMatch(packet, srule)+" "+data+" "+srule.getPattern().pattern());
 								break;
 							}
 						}
+						else if (i+j+skipCount < packets.size() && isSkippable(packets.get(i+j+skipCount)))
+						{
+							j--;
+							skipCount++;
+						}
+							//System.out.println(i+j+skipCount);
 					}
 				}
 			}
@@ -112,6 +130,10 @@ public class Conversation
 	}
 	private boolean flagsMatch(TCPPacket packet, SubRule srule)
 	{
+		if (srule.getFlags() == null)
+		{
+			return true;
+		}
 		int count = 0;
 		int count2 = 0;
 		if (packet.isAck()) count++;
@@ -122,13 +144,14 @@ public class Conversation
 		if (packet.isUrg()) count++;
 		for (String flag : srule.getFlags())
 		{
-			if (flag.equalsIgnoreCase("A") && packet.isAck()) count2++;
-			if (flag.equalsIgnoreCase("F") && packet.isFin()) count2++;
-			if (flag.equalsIgnoreCase("P") && packet.isPsh()) count2++;
-			if (flag.equalsIgnoreCase("R") && packet.isRst()) count2++;
-			if (flag.equalsIgnoreCase("S") && packet.isSyn()) count2++;
-			if (flag.equalsIgnoreCase("U") && packet.isUrg()) count2++;
+			if (flag.equalsIgnoreCase("ack") && packet.isAck()) count2++;
+			if (flag.equalsIgnoreCase("fin") && packet.isFin()) count2++;
+			if (flag.equalsIgnoreCase("psh") && packet.isPsh()) count2++;
+			if (flag.equalsIgnoreCase("rst") && packet.isRst()) count2++;
+			if (flag.equalsIgnoreCase("syn") && packet.isSyn()) count2++;
+			if (flag.equalsIgnoreCase("urg") && packet.isUrg()) count2++;
 		}
+		//System.out.println(count + " " + count2 + " "+ srule.getFlags().size());
 		return count == count2;
 	}
 	private boolean basicCheck(Rule rule, TCPPacket packet)

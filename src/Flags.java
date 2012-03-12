@@ -1,12 +1,12 @@
 
 public class Flags {
 
-	public static String a = "\"ack\"";
-	public static String s = "\"syn\"";
-	public static String f = "\"fin\"";
-	public static String r = "\"rst\"";
-	public static String p = "\"psh\"";
-	public static String u = "\"urg\"";
+	public static String a = "ack";
+	public static String s = "syn";
+	public static String f = "fin";
+	public static String r = "rst";
+	public static String p = "psh";
+	public static String u = "urg";
 	
 	public static String getFlag(char ind) {
 		String ret = null;
