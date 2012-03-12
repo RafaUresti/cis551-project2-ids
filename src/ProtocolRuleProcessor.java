@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.sourceforge.jpcap.net.Packet;
+import net.sourceforge.jpcap.net.TCPPacket;
 import net.sourceforge.jpcap.net.UDPPacket;
 public class ProtocolRuleProcessor
 {
