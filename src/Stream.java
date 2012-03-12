@@ -76,7 +76,8 @@ public class Stream {
 				if (this.recIniSeqNumber==-1) {
 					//It must be the first received packet
 					this.recIniSeqNumber = packet.getSequenceNumber();
-					this.recCurrentSeqNumber = this.recIniSeqNumber++;
+					if (packet.isSyn()) {this.recCurrentSeqNumber = this.recIniSeqNumber+1;}
+					else {this.recCurrentSeqNumber = this.recIniSeqNumber+packet.getData().length;}				
 				}
 				else {
 					//This is a data packet
@@ -85,7 +86,7 @@ public class Stream {
 					
 					if (packet.getSequenceNumber()==this.recCurrentSeqNumber) {
 						//If it is the next packet we are expecting
-						System.out.println("packet expected");
+//						System.out.println("packet expected");
 						
 						//We add the data
 						if (dataRecv==null) {
@@ -100,6 +101,9 @@ public class Stream {
 					}
 					
 					else {
+						System.out.println("Here !");
+						System.out.println(packet.getSequenceNumber());
+						System.out.println(this.recCurrentSeqNumber);
 						//The packet we were expecting has been delayed, or arrived earlier
 						
 						//We keep this packet inside our hashtable
@@ -110,20 +114,20 @@ public class Stream {
 					}
 					if (!(this.dataRecv==null)){
 						//ASCII string of data received
-						System.out.println("received :" + new String(dataRecv));
-						
-						//Hex version of data received
-						String hexRes = null;
-						for (int i=0; i<dataRecv.length; i++){
-							hexRes+=Integer.toHexString(dataRecv[i]);
-						}
-						System.out.println("received to hex : "+ hexRes);
+//						System.out.println("received :" + new String(dataRecv));
+//						
+//						//Hex version of data received
+//						String hexRes = null;
+//						for (int i=0; i<dataRecv.length; i++){
+//							hexRes+=Integer.toHexString(dataRecv[i]);
+//						}
+//						System.out.println("received to hex : "+ hexRes);
 					}
 					
 					//Hex version of UTF-8 String version of "now I own your computer"
-					String nowIown = "Now I own your computer";
-					String nowIhex = String.format("%x", new BigInteger(nowIown.getBytes("UTF-8")));
-					System.out.println("Hex value of nowIown : "+nowIhex);
+//					String nowIown = "Now I own your computer";
+//					String nowIhex = String.format("%x", new BigInteger(nowIown.getBytes("UTF-8")));
+//					System.out.println("Hex value of nowIown : "+nowIhex);
 					
 				}
 			}
@@ -132,18 +136,18 @@ public class Stream {
 				if (this.sendIniSeqNumber==-1) {
 					//It must be the first packet sent
 					this.sendIniSeqNumber = packet.getSequenceNumber();
-					this.sendCurrentSeqNumber = this.sendIniSeqNumber++;
+					if (packet.isSyn()) {this.sendCurrentSeqNumber = this.sendIniSeqNumber+1;}
+					else {this.sendCurrentSeqNumber = this.sendIniSeqNumber+packet.getData().length;}	
 				}
 				else {
 					//This is a data packet
-					
 					if (packet.getSequenceNumber()==this.sendCurrentSeqNumber) {
 						
 						if (this.dataSend==null) {
 							this.dataSend = packet.getData();	
 						}
 						else {		
-							this.dataSend = ArrayHelper.join(this.dataSend, packet.getData());	
+							this.dataSend = ArrayHelper.join(this.dataSend, packet.getData());
 						}
 						
 						//We now wait for the next packet
@@ -151,7 +155,7 @@ public class Stream {
 					}
 					else {
 						//The packet we were expecting has been delayed, or arrived earlier
-							
+						
 						//We keep this packet inside our hashtable
 						this.dataRecvWait.put(packet.getSequenceNumber(), packet.getData());
 							
@@ -159,7 +163,7 @@ public class Stream {
 						this.gatherData("send");
 					}
 					if (!(this.dataSend==null)){
-					System.out.println("Sent :" + new String(dataSend));
+				//		System.out.println("Sent :" + new String(dataSend));
 					}
 				}
 			}
@@ -173,8 +177,7 @@ public class Stream {
 			while (this.dataRecvWait.containsKey(this.recCurrentSeqNumber)) {
 				byte[] dataToadd = this.dataRecvWait.get(this.recCurrentSeqNumber);
 				//We add the data		
-				this.dataRecv = ArrayHelper.join(this.dataRecv, dataToadd);
-				
+				this.dataRecv = ArrayHelper.join(this.dataRecv, dataToadd);				
 				this.recCurrentSeqNumber+=dataToadd.length;
 			}
 		}
@@ -184,7 +187,6 @@ public class Stream {
 				byte[] dataToadd = this.dataSentWait.get(this.sendCurrentSeqNumber);
 				//We add the data		
 				this.dataSend = ArrayHelper.join(this.dataSend, dataToadd);
-				
 				this.sendCurrentSeqNumber++;
 			}
 		}
@@ -195,10 +197,20 @@ public class Stream {
 		ret += "destport : " + this.destport + "\n";
 		ret += "ip : " + this.ip + "\n";
 		if (dataSend!=null){
-		ret += "data sent : " + new String(dataSend) + "\n";
+		try {
+			ret += "data sent : " + new String(dataSend, "ISO-8859-1") + "\n";
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		}
 		if (dataRecv!=null){
-		ret += "data received : " + new String(dataRecv) + "\n";
+		try {
+			ret += "data received : " + new String(dataRecv, "ISO-8859-1") + "\n";
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		}
 		return ret;
 	}
@@ -208,21 +220,46 @@ public class Stream {
 		ArrayList<Rule> matchedRules = new ArrayList<Rule>();
 		Rule currentRule;
 		StreamRule currentStreamRule;
+		boolean destportMatch = false;
+		boolean srcportMatch = false;
+		boolean ipMatch = false;
 		boolean firstMatch = false;
-		boolean recMatch = false;
-		boolean sendMatch = false;
+		boolean recMatch= false;
+		boolean sendMatch= false;
 		Pattern recPattern;
 		Pattern sendPattern;
 		Matcher m;
 		Iterator<Rule> nextRule = ruleSet.listIterator();
 		
 		while (nextRule.hasNext()) {
-			currentRule = nextRule.next();
 			
+			currentRule = nextRule.next();
 			//We only want to test 
 			if (currentRule.getSrule()!=null) {
 				currentStreamRule = currentRule.getSrule();
-				firstMatch = (currentStreamRule.getSrcPort()==Integer.toString(this.getSrcport())) && (currentStreamRule.getDstPort()==Integer.toString(this.getDestport()))&&(currentStreamRule.getIp()==this.getIp());
+				
+				if (currentStreamRule.getSrcPort().equals("any")) {
+					srcportMatch = true;
+				}
+				else {
+					srcportMatch = currentStreamRule.getSrcPort().equals(Integer.toString(this.getSrcport()));
+				}
+				
+				if (currentStreamRule.getDstPort().equals("any")) {
+					destportMatch = true;
+				}
+				else {
+					destportMatch = currentStreamRule.getDstPort().equals(Integer.toString(this.getDestport()));
+				}
+				
+				if (currentStreamRule.getIp().equals("any")) {
+					ipMatch = true;
+				}
+				else {
+					ipMatch = currentStreamRule.getIp().equals(this.getIp());
+				}
+				
+				firstMatch = srcportMatch&&destportMatch&&ipMatch;
 				
 				//If the first elements of the rule are matched, then we can try to match the regular expression(s)
 				if (firstMatch) {
@@ -231,14 +268,23 @@ public class Stream {
 					if (currentStreamRule.getRecv()!=null) {
 						recPattern = Pattern.compile(currentStreamRule.getRecv());
 						String rec = null;
-						try {
-							rec = new String (this.dataRecv,"ISO-8856-1");
-						} catch (UnsupportedEncodingException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+						if (this.dataRecv!=null) {
+							try {
+								rec = new String (this.dataRecv, "ISO-8859-1");
+							} catch (UnsupportedEncodingException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}	
 						}
-						m = recPattern.matcher(rec);
-						recMatch = m.find();
+						
+						if (rec!=null) {
+							
+							m = recPattern.matcher(rec);
+							recMatch = m.find();	
+						}
+					}
+					else {
+						recMatch =true;
 					}
 					
 					//Regular expression over what is sent
@@ -246,18 +292,23 @@ public class Stream {
 						sendPattern = Pattern.compile(currentStreamRule.getSnd());
 						String sen = null;
 						try {
-							sen = new String (this.dataSend, "ISO-8856-1");
+							if (dataSend!=null) {
+								sen = new String (this.dataSend, "ISO-8859-1");	
+							}
 						} catch (UnsupportedEncodingException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-						m = sendPattern.matcher(sen);
-						sendMatch = m.find();
+						if (sen!=null) {
+							m = sendPattern.matcher(sen);
+							sendMatch = m.find();	
+						}
 					}
-					
+					else {
+						sendMatch = true;
+					}
 					//If everything is matched
-					if (recMatch&&sendMatch) {
-						
+					if (recMatch&&sendMatch) {						
 						//We add the rule that was matched to the list
 						matchedRules.add(currentRule);
 					}
