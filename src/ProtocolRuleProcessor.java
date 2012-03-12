@@ -31,24 +31,28 @@ public class ProtocolRuleProcessor
 		{
 			processUDP((UDPPacket)packet);
 		}
-		
 	}
-	
+
+	private void processTCP(TCPPacket packet)
+	{
+
+	}	
 	private void processUDP(UDPPacket packet)
 	{
 		boolean isReceive = packet.getDestinationAddress().equals(host);
-		
 		for (Rule rule : udpRules)
 		{
 			ProtocolRule prule = rule.getPrule();
-			if (!prule.getSrcPort().equals("any") &&
-			    packet.getSourcePort() != Integer.parseInt(rule.getPrule().getSrcPort()))
+			String srcPort = isReceive ? prule.getDstPort() : prule.getSrcPort();
+			String dstPort = isReceive ? prule.getSrcPort() : prule.getDstPort();
+			if (!srcPort.equals("any") &&
+			    packet.getSourcePort() != Integer.parseInt(srcPort))
 			{
 				udpMap.remove(rule);
 				continue;
 			}
-			if (!prule.getDstPort().equals("any") &&
-				packet.getDestinationPort() != Integer.parseInt(prule.getDstPort()))
+			if (!dstPort.equals("any") &&
+				packet.getDestinationPort() != Integer.parseInt(dstPort))
 			{
 				udpMap.remove(rule);
 				continue;
@@ -66,15 +70,17 @@ public class ProtocolRuleProcessor
 			{
 				subRule = 0;
 			}
-			String data = new String(packet.getData());
+			String data = null;
+			try
+			{data=new String(packet.getData(),"ISO-8859-1");
+			}catch(Exception exc){exc.printStackTrace();}
 			SubRule srule = prule.getSubRule().get(subRule);
-			if ((isReceive && srule.isReceived() && srule.getPattern().matcher(data).matches()) ||
-				(!isReceive && !srule.isReceived() && srule.getPattern().matcher(data).matches()))
+			if ((isReceive && srule.isReceived() && srule.getPattern().matcher(data).find()) ||
+				(!isReceive && !srule.isReceived() && srule.getPattern().matcher(data).find()))
 			{
 				if (subRule + 1 == prule.getSubRule().size())
 				{
 					udpMap.remove(rule);
-					System.out.println("Rule: "+rule.getName());
 				}
 				else
 				{
