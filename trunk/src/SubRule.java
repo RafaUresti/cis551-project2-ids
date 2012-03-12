@@ -16,7 +16,7 @@ public class SubRule {
 
 	public void setData(String data) {
 		this.data = data;
-		pattern = Pattern.compile(".*"+data.substring(1,data.length()-1)+".*");
+		pattern = Pattern.compile(data.substring(1,data.length()-1));
 	}
 
 	public Pattern getPattern() {
@@ -45,12 +45,14 @@ public class SubRule {
 
 	public void print_rules() {
 		System.out.println((isReceived ? "Recv : " : "Send : ")+ data);
-		
-		int c =0;
-		for(Iterator<String> i= flags.iterator(); i.hasNext();){
-			System.out.println((isReceived ? "Recv Flag : " : "Send Flag : ")+ 
+		if (flags != null)
+		{		
+			int c =0;
+			for(Iterator<String> i= flags.iterator(); i.hasNext();){
+				System.out.println((isReceived ? "Recv Flag : " : "Send Flag : ")+ 
 								(c+1) +" "+i.next());
-			c ++;
+				c ++;
+			}
 		}
 	}
 }
