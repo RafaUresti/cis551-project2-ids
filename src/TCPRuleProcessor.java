@@ -71,7 +71,7 @@ public class TCPRuleProcessor
 		List<TCPPacket> packets = stream.getPackets();
 		for (int pindex=0;pindex<packets.size();pindex++) {
 			for (ProtocolRule rule : protocolRules) {
-				if (basicCheck(rule, packets.get(0))) {
+				if (!stream.containsRule(rule) && basicCheck(rule, packets.get(0))) {
 					int skipCount = 0;
 					for (int subIndex=0;subIndex<rule.getSubRule().size();subIndex++) {
 						if (pindex+subIndex+skipCount < packets.size()/* && !isSkippable(packets.get(pindex+subIndex+skipCount))*/) {
@@ -85,6 +85,7 @@ public class TCPRuleProcessor
 									(!isReceive && !srule.isReceived() && srule.getPattern().matcher(data).find())) {
 								if (subIndex + 1 == rule.getSubRule().size()) {
 									System.out.println("Rule: " +rule.getName()+ " Packet #:"+stream.getCount());
+									stream.addRule(rule);
 								}
 							}
 							else {
@@ -109,12 +110,13 @@ public class TCPRuleProcessor
 	{
 		for (StreamRule rule : streamRules)
 		{
-			if (basicCheck(rule, c.getPackets().get(0)))
+			if (!c.containsRule(rule) && basicCheck(rule, c.getPackets().get(0)))
 			{
 				if (rule.isReceive() && c.getRecvData() != null) {
 					String rec = new String (c.getRecvData(), "ISO-8859-1");
 					if (rule.getPattern().matcher(rec).find()) {
-						System.out.println("Rule: "+rule+" Packet # "+c.getCount());
+						System.out.println("Rule: "+rule.getName()+" Packet # "+c.getCount());
+						c.addRule(rule);
 					}
 				}
 				
@@ -122,7 +124,8 @@ public class TCPRuleProcessor
 				else if (!rule.isReceive() && c.getSendData() != null) {
 					String sen = new String (c.getSendData(), "ISO-8859-1");	
 					if (rule.getPattern().matcher(sen).find()) {
-						System.out.println("Rule: "+rule+" Packet # "+c.getCount());
+						System.out.println("Rule: "+rule.getName()+" Packet # "+c.getCount());
+						c.addRule(rule);
 					}
 				}
 			}
