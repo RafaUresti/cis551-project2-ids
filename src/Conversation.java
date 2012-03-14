@@ -85,10 +85,11 @@ public class Conversation
 	
 	public void matchesRules(List<Rule> rules) {
 		for (int i=0;i<packets.size();i++) {
-			for (Rule rule : rules) {
+			for (Rule r : rules) {
+				ProtocolRule rule = (ProtocolRule)r;
 				if (basicCheck(rule, packets.get(0))) {
 						int skipCount = 0;
-					for (int j=0;j<rule.getPrule().getSubRule().size();j++) {
+					for (int j=0;j<rule.getSubRule().size();j++) {
 						if (i+j+skipCount < packets.size() && !isSkippable(packets.get(i+j+skipCount))) {
 							TCPPacket packet = packets.get(i+j+skipCount);
 							boolean isReceive = isReceived(packet);
@@ -96,11 +97,11 @@ public class Conversation
 							try
 							{data=new String(packet.getData(),"ISO-8859-1");
 							}catch(Exception exc){exc.printStackTrace();}
-							SubRule srule = rule.getPrule().getSubRule().get(j);
+							SubRule srule = rule.getSubRule().get(j);
 							if (flagsMatch(packet,srule) &&
 									(isReceive && srule.isReceived() && srule.getPattern().matcher(data).find()) ||
 									(!isReceive && !srule.isReceived() && srule.getPattern().matcher(data).find())) {
-								if (j + 1 == rule.getPrule().getSubRule().size()) {
+								if (j + 1 == rule.getSubRule().size()) {
 									System.out.println("Rule: " +rule.getName());
 								}
 							}
@@ -142,24 +143,23 @@ public class Conversation
 		if (packet.isRst()) count++;
 		if (packet.isSyn()) count++;
 		if (packet.isUrg()) count++;
-		for (String flag : srule.getFlags())
+		for (char flag : srule.getFlags())
 		{
-			if (flag.equalsIgnoreCase("ack") && packet.isAck()) count2++;
-			if (flag.equalsIgnoreCase("fin") && packet.isFin()) count2++;
-			if (flag.equalsIgnoreCase("psh") && packet.isPsh()) count2++;
-			if (flag.equalsIgnoreCase("rst") && packet.isRst()) count2++;
-			if (flag.equalsIgnoreCase("syn") && packet.isSyn()) count2++;
-			if (flag.equalsIgnoreCase("urg") && packet.isUrg()) count2++;
+			if (flag == IDS.ACK && packet.isAck()) count2++;
+			if (flag == IDS.FIN && packet.isFin()) count2++;
+			if (flag == IDS.PSH && packet.isPsh()) count2++;
+			if (flag == IDS.RST && packet.isRst()) count2++;
+			if (flag == IDS.SYN && packet.isSyn()) count2++;
+			if (flag == IDS.URG && packet.isUrg()) count2++;
 		}
 		//System.out.println(count + " " + count2 + " "+ srule.getFlags().size());
 		return count == count2;
 	}
-	private boolean basicCheck(Rule rule, TCPPacket packet)
+	private boolean basicCheck(ProtocolRule rule, TCPPacket packet)
 	{
 		boolean isReceive = isReceived(packet);
-		ProtocolRule prule = rule.getPrule();
-		String srcPort = isReceive ? prule.getDstPort() : prule.getSrcPort();
-		String dstPort = isReceive ? prule.getSrcPort() : prule.getDstPort();
+		String srcPort = isReceive ? rule.getDstPort() : rule.getSrcPort();
+		String dstPort = isReceive ? rule.getSrcPort() : rule.getDstPort();
 		if (!srcPort.equals("any") &&
 		    packet.getSourcePort() != Integer.parseInt(srcPort))
 		{
@@ -171,9 +171,9 @@ public class Conversation
 			return false;
 		}
 		
-		if (!rule.getPrule().getIp().equals("any") &&
-			((isReceive && !packet.getSourceAddress().equals(prule.getIp())) ||
-			 (!isReceive && !packet.getDestinationAddress().equals(prule.getIp()))))
+		if (!rule.getIp().equals("any") &&
+			((isReceive && !packet.getSourceAddress().equals(rule.getIp())) ||
+			 (!isReceive && !packet.getDestinationAddress().equals(rule.getIp()))))
 		{
 			return false;
 		}

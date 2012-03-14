@@ -4,7 +4,6 @@ import net.sourceforge.jpcap.capture.PacketListener;
 import net.sourceforge.jpcap.net.Packet;
 import net.sourceforge.jpcap.net.TCPPacket;
 
-
 public class IDSPacketListener implements PacketListener
 {
 	private StreamRuleProcessor streamProcessor;	

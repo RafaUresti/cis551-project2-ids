@@ -70,7 +70,7 @@ public class ProtocolRuleProcessor
 	{
 		boolean isReceive = packet.getDestinationAddress().equals(host);
 		for (Rule rule : udpRules) {
-			ProtocolRule prule = rule.getPrule();
+			ProtocolRule prule = (ProtocolRule)rule;
 			String srcPort = isReceive ? prule.getDstPort() : prule.getSrcPort();
 			String dstPort = isReceive ? prule.getSrcPort() : prule.getDstPort();
 			if (!srcPort.equals("any") &&
@@ -119,8 +119,8 @@ public class ProtocolRuleProcessor
 		udpRules = new ArrayList<Rule>();
 		tcpRules = new ArrayList<Rule>();
 		for (Rule rule : rules) {
-			if (rule.getPrule() != null) {
-				ProtocolRule pr = rule.getPrule();
+			if (rule instanceof ProtocolRule) {
+				ProtocolRule pr = (ProtocolRule)rule;
 				if (pr.getProtocol().equals("udp")) {
 					udpRules.add(rule);
 				}

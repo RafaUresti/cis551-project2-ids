@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 
-public class ProtocolRule {
+public class ProtocolRule extends Rule {
 
 	private String type = "protocol";
 	private String protocol;
@@ -56,6 +56,7 @@ public class ProtocolRule {
 		this.sub_rule = sr;
 	}
 	public void print_rules() {
+		super.print_rules();
 		if(type != null)
 			System.out.println("Rule Type : "+ type);
 		if(protocol != null)

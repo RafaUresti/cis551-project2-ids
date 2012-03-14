@@ -1,14 +1,16 @@
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.regex.Pattern;
 
-
+/**
+ * Sub-rule of a ProtocolRule that defines what to look
+ * for in a single packet.
+ *
+ */
 public class SubRule {
 
-	private String data;
-	private Pattern pattern;
-	private boolean isReceived;
-	private ArrayList<String> flags;
+	private String data; // regular expression to be matched.
+	private Pattern pattern; // compiled version of the regular expression
+	private boolean isReceived; // Determines if this is a Send or Receive rule.
+	private char[] flags; // The flags to look for on a TCP Packet.
 	
 	public String getData() {
 		return data;
@@ -16,7 +18,7 @@ public class SubRule {
 
 	public void setData(String data) {
 		this.data = data;
-		pattern = Pattern.compile(data.substring(1,data.length()-1));
+		pattern = Pattern.compile(data);
 	}
 
 	public Pattern getPattern() {
@@ -35,24 +37,17 @@ public class SubRule {
 		this.isReceived = isReceived;
 	}
 
-	public ArrayList<String> getFlags() {
+	public char[] getFlags() {
 		return flags;
 	}
 
-	public void setFlags(ArrayList<String> flags) {
+	public void setFlags(char[] flags) {
 		this.flags = flags;
 	}
 
 	public void print_rules() {
 		System.out.println((isReceived ? "Recv : " : "Send : ")+ data);
-		if (flags != null)
-		{		
-			int c =0;
-			for(Iterator<String> i= flags.iterator(); i.hasNext();){
-				System.out.println((isReceived ? "Recv Flag : " : "Send Flag : ")+ 
-								(c+1) +" "+i.next());
-				c ++;
-			}
-		}
+		System.out.print(isReceived ? "Recv Flag : " : "Send Flag : ");
+		System.out.println(flags != null ? new String(flags) : "");
 	}
 }
