@@ -10,7 +10,6 @@ public class StreamRuleProcessor
 {
 	private List<Rule> rules;
 	private ArrayList<Rule> matchedRules = new ArrayList<Rule> ();
-	private Hashtable<String, ArrayList<TCPPacket>> connections = new Hashtable<String, ArrayList<TCPPacket>>();
 	private Hashtable<String, Stream> streams = new Hashtable<String, Stream>();
 	private String host = "192.168.0.1";
 	
@@ -32,15 +31,12 @@ public class StreamRuleProcessor
 					packet.getDestinationPort() + ":" +
 					packet.getSourcePort();
 			
-			if (connections.containsKey(key)) { 
+			if (streams.containsKey(key)) { 
 				//There is a stream that corresponds to this packet
-				
-				//We add the packet to the corresponding list of packets
-				connections.get(key).add(packet);
 				
 				//We add the packet to the new stream
 				try {
-					streams.get(key).addPacket(packet, "recv");
+					streams.get(key).addPacket(packet, true);
 				} catch (UnsupportedEncodingException e) {
 					e.printStackTrace();
 				}
@@ -51,7 +47,7 @@ public class StreamRuleProcessor
 				if (!this.matchedRules.isEmpty()) {
 					//We print out the corresponding connection and the number of packets that were received during this connection
 					System.out.println("Key :" + key);
-					System.out.println("Number of packets received during this connection : "+ this.connections.get(key).size());
+					System.out.println("Number of packets received during this connection : "+ this.streams.get(key).size());
 					Iterator<Rule> itRule = this.matchedRules.iterator();
 					while (itRule.hasNext()) {
 						System.out.println("Rule matched : "+ itRule.next().getName());
@@ -65,7 +61,6 @@ public class StreamRuleProcessor
 					System.out.println("*****Stream over*****");
 					streams.get(key).toString();
 					//And we remove the connection from the hashtables
-					connections.remove(key);
 					streams.remove(key);
 				}
 			}
@@ -75,10 +70,9 @@ public class StreamRuleProcessor
 					//We create a new list of TCPPackets, and we add it to the hashtable
 					ArrayList<TCPPacket> connection = new ArrayList<TCPPacket>();
 					connection.add(packet);
-					connections.put(key, connection);
 					
 					//we create a new stream from this packet, we add it to the hashtable
-					Stream stream = new Stream(packet, "recv");
+					Stream stream = new Stream(packet, true);
 					streams.put(key,stream);
 					
 					//We check if the stream match some rule(s)
@@ -86,7 +80,7 @@ public class StreamRuleProcessor
 					//We print the matched rules
 					if (!this.matchedRules.isEmpty()) {
 						System.out.println("Key :" + key);
-						System.out.println("Number of packets received during this connection : "+ this.connections.get(key).size());
+						System.out.println("Number of packets received during this connection : "+ this.streams.get(key).size());
 						Iterator<Rule> itRule = this.matchedRules.iterator();
 						while (itRule.hasNext()) {
 							System.out.println("Rule matched : "+ itRule.next().getName());
@@ -103,15 +97,12 @@ public class StreamRuleProcessor
 					packet.getSourcePort() + ":" +
 					packet.getDestinationPort();
 			
-			if (connections.containsKey(key)) { 
+			if (streams.containsKey(key)) { 
 				//There is a stream that corresponds to this packet
-				
-				//We add the packet to the corresponding list of packets
-				connections.get(key).add(packet);
 				
 				//We add the packet to the new stream
 					try {
-						streams.get(key).addPacket(packet, "send");
+						streams.get(key).addPacket(packet, false);
 					} catch (UnsupportedEncodingException e) {
 						e.printStackTrace();
 					}
@@ -122,7 +113,7 @@ public class StreamRuleProcessor
 				//We print the matched rules
 				if (!this.matchedRules.isEmpty()) {
 					System.out.println("Key :" + key);
-					System.out.println("Number of packets received during this connection : "+ this.connections.get(key).size());
+					System.out.println("Number of packets received during this connection : "+ this.streams.get(key).size());
 					Iterator<Rule> itRule = this.matchedRules.iterator();
 					while (itRule.hasNext()) {
 						System.out.println("Rule matched : "+ itRule.next().getName());
@@ -136,7 +127,6 @@ public class StreamRuleProcessor
 					System.out.println("*****Stream over*****");
 					streams.get(key).toString();
 					//And we remove the connection from the hashtable
-					connections.remove(key);
 					streams.remove(key);
 				}			
 			}
@@ -147,10 +137,9 @@ public class StreamRuleProcessor
 					//We create a new list of TCPPackets, and we add it to the hashtable
 					ArrayList<TCPPacket> connection = new ArrayList<TCPPacket>();
 					connection.add(packet);
-					connections.put(key, connection);
 					
 					//we create a new stream from this packet, we add it to the hashtable
-					Stream stream = new Stream(packet, "send");
+					Stream stream = new Stream(packet, false);
 					streams.put(key,stream);
 					
 					//We check if the stream match some rule(s)
@@ -158,7 +147,7 @@ public class StreamRuleProcessor
 					//We print the matched rules
 					if (!this.matchedRules.isEmpty()) {
 						System.out.println("Key :" + key);
-						System.out.println("Number of packets received during this connection : "+ this.connections.get(key).size());
+						System.out.println("Number of packets received during this connection : "+ this.streams.get(key).size());
 						Iterator<Rule> itRule = this.matchedRules.iterator();
 						while (itRule.hasNext()) {
 							System.out.println("Rule matched : "+ itRule.next().getName());
