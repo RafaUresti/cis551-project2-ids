@@ -33,6 +33,8 @@ public class TCPRuleProcessor
 	 */
 	public void processRules(TCPPacket packet)
 	{
+		count++;
+		
 		// Values are set based on where the data came from.
 		boolean isReceive = packet.getDestinationAddress().equals(host);
 		String address = isReceive ? packet.getSourceAddress() :packet.getDestinationAddress();
