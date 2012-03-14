@@ -10,8 +10,6 @@ import net.sourceforge.jpcap.util.ArrayHelper;
  * Class that represents a TCP session.  It keeps track
  * of a stream of data, as well as individual packets for
  * protocol rules.
- * 
- * @author bbreck
  *
  */
 public class TCPSession 
@@ -28,8 +26,10 @@ public class TCPSession
 	private long recvSequence = -1;
 	private boolean finished;
 	private List<Rule> violatedRules;
+	private Map<Rule, List <Integer>> inProgress;
 	public TCPSession(String host)
 	{
+		inProgress = new HashMap<Rule, List<Integer>>();
 		violatedRules = new ArrayList<Rule>();
 		sendWaiting = new HashMap<Long, TCPPacket>();
 		recvWaiting = new HashMap<Long, TCPPacket>();
@@ -176,5 +176,9 @@ public class TCPSession
 	public boolean containsRule(Rule rule)
 	{
 		return violatedRules.contains(rule);
+	}
+
+	public Map<Rule, List<Integer>> getInProgress() {
+		return inProgress;
 	}
 }

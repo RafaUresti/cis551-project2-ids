@@ -98,54 +98,71 @@ public class TCPRuleProcessor
 	 */
 	private void matchProtocolRules(TCPSession stream) throws Exception {
 		List<TCPPacket> packets = stream.getPackets();
-		
+		// Iterate over the available packets
 		for (int pindex=0;pindex<packets.size();pindex++) {
-			boolean keepPacket = false;
+			TCPPacket packet = packets.remove(pindex);
+			pindex--;
+			// If it is skippable, continue on.
+			if (isSkippable(packet))
+				continue;
+			
+			// Iterate over the rules for that packet
 			for (ProtocolRule rule : protocolRules) {
+			
 				if (!stream.containsRule(rule) && basicCheck(rule, packets.get(0))) {
-					// number of packets (i.e. ACKs) that have been ignored
-					int skipCount = 0;
-					for (int subIndex=0;subIndex<rule.getSubRule().size();subIndex++) {
-						if (pindex+subIndex+skipCount < packets.size() && 
-							!isSkippable(packets.get(pindex+subIndex+skipCount))) {
-							
-							TCPPacket packet = packets.get(pindex+subIndex+skipCount);
-							boolean isReceive = isReceived(packet);
-							String data=new String(packet.getData(),"ISO-8859-1");
-							
-							SubRule srule = rule.getSubRule().get(subIndex);
-							if (flagsMatch(packet,srule) &&
-									(isReceive && srule.isReceived() && srule.getPattern().matcher(data).find()) ||
-									(!isReceive && !srule.isReceived() && srule.getPattern().matcher(data).find())) {
-								if (subIndex + 1 == rule.getSubRule().size()) {
-									flagRule(rule, stream);
-								}
-								if (pindex == packets.size()-1)
-								{
-									//keepPacket = true;
-								}
+					// get the packets in progress for this rule.
+					List<Integer> ruleProgress = getRuleProgress(stream, rule);
+					List<Integer> newRuleList = new ArrayList<Integer>();
+					
+					// Either flag the rule, or add the next sub-rule
+					// to be checked in the next packet.
+					while (ruleProgress.size()>0) {
+						Integer subIndex = ruleProgress.remove(0);
+						boolean isReceive = isReceived(packet);
+						String data=new String(packet.getData(),"ISO-8859-1");
+						
+						SubRule srule = rule.getSubRule().get(subIndex);
+						if (flagsMatch(packet,srule) &&
+								(isReceive && srule.isReceived() && 
+								srule.getPattern().matcher(data).find()) ||
+								(!isReceive && !srule.isReceived() && 
+								srule.getPattern().matcher(data).find())) {
+							if (subIndex + 1 == rule.getSubRule().size()) {
+								flagRule(rule, stream);
 							}
-							else {
-								//System.out.println("Rule: "+rule.getName());
-								//System.out.println(j+" "+isReceive+" " + srule.isReceived() + " " + srule.getPattern().matcher(data).find() + " " + flagsMatch(packet, srule)+" "+data+" "+srule.getPattern().pattern());
-								break;
+							else
+							{
+								newRuleList.add(subIndex+1);
 							}
 						}
-						else if (pindex+subIndex+skipCount < packets.size() && isSkippable(packets.get(pindex+subIndex+skipCount)))
-						{
-							subIndex--;
-							skipCount++;
+						else {
+							break;
 						}
-							//System.out.println(i+j+skipCount);
 					}
+					stream.getInProgress().put(rule, newRuleList);
 				}
 			}
-			if (!keepPacket)
-			{
-				//packets.remove(0);
-				//pindex--;
-			}
 		}
+	}
+	
+	/**
+	 * Get the index of the sub rules to check for the next TCP
+	 * packet in the session.
+	 * 
+	 * @param key
+	 * @param rule
+	 * @return
+	 */
+	private List<Integer> getRuleProgress(TCPSession session, Rule rule)
+	{
+		List<Integer> subRuleList = session.getInProgress().get(rule);
+		if (subRuleList == null) {
+			subRuleList = new ArrayList<Integer>();
+			session.getInProgress().put(rule, subRuleList);
+		}
+		// Always check the first sub-rule.
+		subRuleList.add(0);
+		return subRuleList;
 	}
 	
 	/**

@@ -32,8 +32,7 @@ public class UDPRuleProcessor {
 		if (rules.size() > 0)
 		{
 			host = rules.get(0).getHost();
-		}
-		
+		}	
 		cacheRules(rules);
 
 	}
@@ -48,15 +47,18 @@ public class UDPRuleProcessor {
 		count++;
 		
 		// Values are set based on where the data came from.
-			boolean isReceive = packet.getDestinationAddress().equals(host);
-			String address = isReceive ? packet.getSourceAddress() :packet.getDestinationAddress();
-			int dstPort = isReceive ? packet.getDestinationPort() : packet.getSourcePort();
-			int srcPort = isReceive ? packet.getSourcePort() :packet.getDestinationPort();
-			
-			//We generate a key which will identify the stream
-			String key = address + ":" +
-					dstPort + ":" +
-					srcPort;
+		boolean isReceive = packet.getDestinationAddress().equals(host);
+		String address = isReceive ? packet.getSourceAddress() :
+								packet.getDestinationAddress();
+		int dstPort = isReceive ? packet.getDestinationPort() : 
+								packet.getSourcePort();
+		int srcPort = isReceive ? packet.getSourcePort() :
+								packet.getDestinationPort();
+		
+		//We generate a key which will identify the stream
+		String key = address + ":" +
+				dstPort + ":" +
+				srcPort;
 		
 		for (Rule rule : udpRules) {
 			
@@ -82,10 +84,10 @@ public class UDPRuleProcessor {
 			// repeats values multiple times, there may be multiple rule checks
 			// occurring at once, only at diferent stages. Check all of them now.
 			List<Integer> subRuleList = getRuleProgress(key, rule);
-			
-			subRuleList.add(0);
-			for (Integer subRule : subRuleList)
+			List<Integer> newRuleList = new ArrayList<Integer>();
+			while (subRuleList.size()>0)
 			{
+				Integer subRule = subRuleList.remove(0);
 				// Always remove because you are doing the check now.
 				// If it is part of a rule then the next subrule will
 				// be added to the list later if necessary.
@@ -99,7 +101,8 @@ public class UDPRuleProcessor {
 				catch(Exception exc){exc.printStackTrace();}
 				
 				// If the subrule matches, either print the rule match
-				// text, or add the next subRule to the list so that it
+				// text because we are at the end of the sub-rules, or 
+				// add the next subRule to the list so that it
 				// can be checked against the next packet.
 				SubRule srule = prule.getSubRule().get(subRule);
 				if ((isReceive && srule.isReceived() && 
@@ -111,10 +114,11 @@ public class UDPRuleProcessor {
 											" UDP Packet # "+count);
 					}
 					else {
-						subRuleList.add(subRule+1);
+						newRuleList.add(subRule+1);
 					}
 				}	
 			}
+			udpMap.get(key).getUdpMap().put(rule, newRuleList);
 		}
 	}
 	/**
@@ -139,6 +143,8 @@ public class UDPRuleProcessor {
 			subRuleList = new ArrayList<Integer>();
 			session.getUdpMap().put(rule, subRuleList);
 		}
+		// Always add the first sub-rule.
+		subRuleList.add(0);
 		return subRuleList;
 	}
 	
