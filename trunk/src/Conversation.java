@@ -39,11 +39,11 @@ public class Conversation
 		boolean isReceived = isReceived(packet);
 		
 		// If this is an ack, remove the sent packet from our hashtable.
-		if (!isReceived && packet.isAck() && packet.getData() == null) {
+		if (!isReceived && isSkippable(packet)) {
 			sendWaiting.remove(packet.getAcknowledgementNumber());
 			sendSequence = packet.getSequenceNumber()+packet.getData().length;
 		}
-		else if (isReceived && packet.isAck() && packet.getData() == null)
+		else if (isReceived && isSkippable(packet))
 		{
 			recvSequence = packet.getSequenceNumber()+packet.getData().length;
 		}
@@ -79,6 +79,21 @@ public class Conversation
 			// Keep the history of packets
 			sendWaiting.put(packet.getSequenceNumber(), packet);
 		}
+	}
+	
+	/**
+	 * Method that determines whether the packet can be skipped in a
+	 * protocol comparison. This is true when the packet is an
+	 * 
+	 * @param packet
+	 * @return
+	 */
+	private boolean isSkippable(TCPPacket packet) {
+		boolean result = false;
+		if (packet.isAck() && (packet.getData() == null || packet.getData().length==0)) {
+			result = true;
+		}
+		return result;
 	}
 	
 	private long addAdditional(TCPPacket packet, long sequence, Map<Long, TCPPacket> waiting)
