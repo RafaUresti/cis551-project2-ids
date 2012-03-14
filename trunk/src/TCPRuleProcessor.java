@@ -125,6 +125,8 @@ public class TCPRuleProcessor
 	
 	private void matchStreamRules(Conversation c) throws Exception
 	{
+		if (c.getPackets().size() == 0)
+			return;
 		for (StreamRule rule : streamRules)
 		{
 			if (!c.containsRule(rule) && basicCheck(rule, c.getPackets().get(0)))
