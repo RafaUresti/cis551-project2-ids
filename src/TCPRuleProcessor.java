@@ -10,6 +10,7 @@ public class TCPRuleProcessor
 	private List<StreamRule> streamRules;
 	private Map<String, Conversation> tcpMap;
 	private String host;
+	private int count = 0;
 	
 	public TCPRuleProcessor(List<Rule> rules)
 	{
@@ -84,8 +85,7 @@ public class TCPRuleProcessor
 									(isReceive && srule.isReceived() && srule.getPattern().matcher(data).find()) ||
 									(!isReceive && !srule.isReceived() && srule.getPattern().matcher(data).find())) {
 								if (subIndex + 1 == rule.getSubRule().size()) {
-									System.out.println("Rule: " +rule.getName()+ " Packet #:"+stream.getCount());
-									stream.addRule(rule);
+									flagRule(rule, stream);
 								}
 							}
 							else {
@@ -115,8 +115,7 @@ public class TCPRuleProcessor
 				if (rule.isReceive() && c.getRecvData() != null) {
 					String rec = new String (c.getRecvData(), "ISO-8859-1");
 					if (rule.getPattern().matcher(rec).find()) {
-						System.out.println("Rule: "+rule.getName()+" Packet # "+c.getCount());
-						c.addRule(rule);
+						flagRule(rule, c);
 					}
 				}
 				
@@ -124,12 +123,17 @@ public class TCPRuleProcessor
 				else if (!rule.isReceive() && c.getSendData() != null) {
 					String sen = new String (c.getSendData(), "ISO-8859-1");	
 					if (rule.getPattern().matcher(sen).find()) {
-						System.out.println("Rule: "+rule.getName()+" Packet # "+c.getCount());
-						c.addRule(rule);
+						flagRule(rule, c);
 					}
 				}
 			}
 		}
+	}
+	
+	private void flagRule(Rule rule, Conversation stream)
+	{
+		System.out.println("Rule: " +rule.getName()+ " TCP Packet # "+count);
+		stream.addRule(rule);
 	}
 	
 	/**
