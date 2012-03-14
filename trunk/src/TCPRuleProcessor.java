@@ -83,7 +83,7 @@ public class TCPRuleProcessor
 				if (!stream.containsRule(rule) && basicCheck(rule, packets.get(0))) {
 					int skipCount = 0;
 					for (int subIndex=0;subIndex<rule.getSubRule().size();subIndex++) {
-						if (pindex+subIndex+skipCount < packets.size()/* && !isSkippable(packets.get(pindex+subIndex+skipCount))*/) {
+						if (pindex+subIndex+skipCount < packets.size() && !isSkippable(packets.get(pindex+subIndex+skipCount))) {
 							TCPPacket packet = packets.get(pindex+subIndex+skipCount);
 							boolean isReceive = isReceived(packet);
 							String data=new String(packet.getData(),"ISO-8859-1");
@@ -106,7 +106,7 @@ public class TCPRuleProcessor
 								break;
 							}
 						}
-						else if (pindex+subIndex+skipCount < packets.size() /*&& isSkippable(packets.get(pindex+subIndex+skipCount))*/)
+						else if (pindex+subIndex+skipCount < packets.size() && isSkippable(packets.get(pindex+subIndex+skipCount)))
 						{
 							subIndex--;
 							skipCount++;
@@ -121,6 +121,21 @@ public class TCPRuleProcessor
 				pindex--;
 			}
 		}
+	}
+	
+	/**
+	 * Method that determines whether the packet can be skipped in a
+	 * protocol comparison. This is true when the packet is an
+	 * 
+	 * @param packet
+	 * @return
+	 */
+	private boolean isSkippable(TCPPacket packet) {
+		boolean result = false;
+		if (packet.isAck() && (packet.getData() == null || packet.getData().length==0)) {
+			result = true;
+		}
+		return result;
 	}
 	
 	private void matchStreamRules(Conversation c) throws Exception
