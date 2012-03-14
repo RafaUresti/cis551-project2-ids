@@ -52,29 +52,24 @@ public class Conversation
 		{
 			if (recvSequence == -1) {
 				recvSequence = packet.getSequenceNumber()+packet.getData().length;
-				System.out.println("recv "+recvSequence+" first " +new String(packet.getData()));
 				if (packet.getData().length == 0) recvSequence++;
 				packets.add(packet);
 			}
 			else if (recvSequence == packet.getSequenceNumber()) {
 				recvSequence = addAdditional(packet, recvSequence, recvWaiting);
-				System.out.println("recv "+recvSequence+" added"+new String(packet.getData()));
 			}
 			else {
 				recvWaiting.put(packet.getSequenceNumber(), packet);
-				System.out.println("recv "+recvSequence+" waiting"+new String(packet.getData()));
 			}
 		}
 		else if (!sendWaiting.containsValue(packet.getSequenceNumber())){
 			if (sendSequence == -1) {
 				sendSequence = packet.getSequenceNumber()+packet.getData().length;
-				System.out.println("send "+recvSequence+" first " +new String(packet.getData()));
 				if (packet.getData().length == 0) sendSequence++;
 				packets.add(packet);
 			}
 			else if (sendSequence == packet.getSequenceNumber()) {
 				sendSequence = addAdditional(packet, sendSequence, sendWaiting);
-				System.out.println("send "+recvSequence+" added"+new String(packet.getData()));
 			}
 			// Keep the history of packets
 			sendWaiting.put(packet.getSequenceNumber(), packet);
