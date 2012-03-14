@@ -46,8 +46,7 @@ public class SubRule {
 	}
 
 	public void print_rules() {
-		System.out.println((isReceived ? "Recv : " : "Send : ")+ data);
-		System.out.print(isReceived ? "Recv Flag : " : "Send Flag : ");
-		System.out.println(flags != null ? new String(flags) : "");
+		System.out.print((isReceived ? "Recv : \"" : "Send : \"")+ data+"\"");
+		System.out.println(flags != null ? " with "+ new String(flags) : "");
 	}
 }

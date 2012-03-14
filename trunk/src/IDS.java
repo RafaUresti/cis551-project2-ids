@@ -32,9 +32,9 @@ public class IDS
 			parser = new RuleParser(args[1]);
 		    rules = parser.parse();
 
-		// Read PCap file.
-		PacketCapture capture= new PacketCapture();
-		capture.addPacketListener(new IDSPacketListener(rules));
+		    // Read PCap file.
+		    PacketCapture capture= new PacketCapture();
+		    capture.addPacketListener(new IDSPacketListener(rules));
 	
 			capture.openOffline(args[0]);
 			capture.capture(-1);
@@ -44,7 +44,8 @@ public class IDS
 			exc.printStackTrace();
 		}
 		
-		for(int i=0; i< rules.size(); i++){
+		for(int i=0; i< rules.size(); i++)
+		{
 			System.out.print(i+"| ");
 			rules.get(i).print_rules();
 		}
