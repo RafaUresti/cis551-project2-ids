@@ -26,18 +26,24 @@ TCPRuleProcessor - Class that processes TCP rules.  For each session, a
 TCPSession object is created which manages the packets. Whenever a new 
 TCP packet is received, it is added to the session and processed appropriately.
 The Stream and Protocol rules are run against the stream each time a new 
-packet is added, providing real-time alarms for rule violations.  For TCP
-Protocol rules, older packets are tossed once they have been processed in 
-order to minimize processing time.  For Stream rules, the stream is
-continuously concatenated in order to provide quick comparisons.
+packet is added, providing real-time alarms for rule violations.  
+	- For TCP Protocol rules, rules that are currently in progress are held
+	  in memory until the rule is violated, or the rule was found to not
+	  be violated. As soon as the packet is examined, it is removed from the
+	  list of packets that need to be processed. Rules are tracked similarly to
+	  the UDPSession described below.
+	- For Stream rules, the stream bytes are concatenated real-time in order
+	  to provide a string to compare. The rules are compared against the string
+	  being built with each packet received.
 
 TCPSession - Class that keeps track of a TCP session. This class ensures that
-packets are reordered correctly, that a sent packet is not processed a second
+packets are ordered correctly, that a sent packet is not processed a second
 time because of a resend, etc.
 
 UDPRuleProcessor - Class that processes UDP rules.  The UDPSession object keeps
 track of rules that are currently in progress allowing for real time analysis 
-of intrusion detection.
+of intrusion detection.  The algorithm is similar to that of the TCP Protocol
+rules above.
 
 UDPSession - Simple wrapper that keeps track of rules that are currently in
 progress. If the same data is repeated multiple times in sub rules, there is a
