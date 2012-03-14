@@ -40,15 +40,15 @@ public class RuleParser
 					else if(t.contains("protocol")) {
 						Rule rule = createProtocolRule(s);
 						rule.setName(ruleName);
-						rule.initHost(host);
+						rule.setHost(host);
 						rules.add(rule);
 					}
 
 					else if(t.contains("tcp_stream")) {
 						Rule rule = createStreamRule(s);
 						rule.setName(ruleName);
-						rule.initHost(host);
-						rules.add(createStreamRule(s));
+						rule.setHost(host);
+						rules.add(rule);
 					}
 								
 				}
@@ -95,15 +95,20 @@ public class RuleParser
 	private SubRule createSubRule(String[] line, Scanner s)
 	{
 		SubRule sub = new SubRule();
-		String data = line[1].trim();
-		sub.setData(data.substring(1, data.length()-1));
-	    if(line.length > 2){ //has flags
-			char[] f = line[2].toLowerCase().toCharArray();
-			sub.setFlags(f);
-		}
-		if(line[0].trim().equals("recv")){
-			sub.setReceived(true);
-		}
+		char[] flags = null; 
+			if(line.length > 2){ //has flags
+				flags = line[2].toCharArray();
+			}
+			if(line[0].trim().equals("recv")){
+				sub.setReceived(true);
+			}
+			String[] reg = line[1].trim().split("with");
+			String data = reg[0].trim();
+			sub.setData(data.substring(1, data.length()-1));
+			if(flags!=null)
+				sub.setFlags(flags);
+			else if (reg.length == 2)
+				sub.setFlags(new char[0]);
 		return sub;
 	}
 	
@@ -116,8 +121,8 @@ public class RuleParser
 			String l = s.nextLine();
 			if(l.contains("=")){
 				String[] line = l.split("=");
-				title= line[0];
-				value = line[1];
+				title= line[0].trim();
+				value = line[1].trim();
 				if(title.equals("src_port"))
 					sr.setSrcPort(value);
 				if(title.equals("dst_port"))
@@ -125,7 +130,7 @@ public class RuleParser
 				if(title.equals("ip"))
 					sr.setIp(value);
 				if(title.equals("send"))
-					sr.setData(value);
+					sr.setData(value.substring(1, value.length()-1));
 				if(title.equals("recv"))
 				{
 					sr.setData(value.substring(1, value.length()-1));

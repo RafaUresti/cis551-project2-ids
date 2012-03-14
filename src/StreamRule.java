@@ -69,6 +69,6 @@ public class StreamRule extends Rule {
 		if(ip!=null)
 			System.out.println("IP : "+ ip);
 		
-		System.out.println(isReceive ?"Recv : " : "Send : "+ data);
+		System.out.println((isReceive ?"Recv : \"" : "Send : \"")+ data+"\"");
 	}
 }

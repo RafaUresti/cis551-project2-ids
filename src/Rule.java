@@ -8,7 +8,7 @@ public class Rule
 	public Rule() {
 	}
 	
-	public void initHost(String host){
+	public void setHost(String host){
 		this.host = host;
 	}
 	
