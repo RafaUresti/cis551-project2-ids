@@ -1,24 +1,28 @@
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import net.sourceforge.jpcap.net.TCPPacket;
+import net.sourceforge.jpcap.util.ArrayHelper;
 
 
 public class Conversation 
 {
-	
 	private String host;
 	
 	private List<TCPPacket> packets;
 	
 	private Map<Long, TCPPacket> sendWaiting;
 	private Map<Long, TCPPacket> recvWaiting;
+	private byte[] sendData = new byte[0];
+	private byte[] recvData = new byte[0];
 	private long sendSequence = -1;
 	private long recvSequence = -1;
 	private boolean finished;
-	int ruleChecked = 0;
+	private long count = 0;
 	public Conversation(String host)
 	{
 		sendWaiting = new HashMap<Long, TCPPacket>();
@@ -29,11 +33,26 @@ public class Conversation
 	
 	public void addPacket(TCPPacket packet)
 	{
+		count++;
 		if (packet.isFin()||packet.isRst()) {
 			System.out.println("Finished");
 			this.finished = true; 
 		}
-		if (isReceived(packet)) {
+		
+		boolean isReceived = isReceived(packet);
+		
+		// If this is an ack, remove the sent packet from our hashtable.
+		if (!isReceived && packet.isAck() && packet.getData() == null) {
+			sendWaiting.remove(packet.getAcknowledgementNumber());
+			sendSequence = packet.getSequenceNumber()+packet.getData().length;
+		}
+		else if (isReceived && packet.isAck() && packet.getData() == null)
+		{
+			recvSequence = packet.getSequenceNumber()+packet.getData().length;
+		}
+		// Otherwise add to the receive list
+		else if (isReceived)
+		{
 			if (recvSequence == -1) {
 				recvSequence = packet.getSequenceNumber()+packet.getData().length;
 				//System.out.println("recv "+recvSequence+" first " +new String(packet.getData()));
@@ -49,7 +68,7 @@ public class Conversation
 				//System.out.println("recv "+recvSequence+" waiting"+new String(packet.getData()));
 			}
 		}
-		else {
+		else if (!sendWaiting.containsValue(packet.getSequenceNumber())){
 			if (sendSequence == -1) {
 				sendSequence = packet.getSequenceNumber()+packet.getData().length;
 				//System.out.println("send "+recvSequence+" first " +new String(packet.getData()));
@@ -60,16 +79,18 @@ public class Conversation
 				sendSequence = addAdditional(packet, sendSequence, sendWaiting);
 				//System.out.println("send "+recvSequence+" added"+new String(packet.getData()));
 			}
-			else {
-				sendWaiting.put(packet.getSequenceNumber(), packet);
-				//System.out.println("send "+recvSequence+" waiting"+new String(packet.getData()));
-			}
+			// Keep the history of packets
+			sendWaiting.put(packet.getSequenceNumber(), packet);
 		}
 	}
 	
 	private long addAdditional(TCPPacket packet, long sequence, Map<Long, TCPPacket> waiting)
 	{
 		packets.add(packet);
+		if (isReceived(packet))
+			recvData = ArrayHelper.join(recvData, packet.getData());
+		else
+			sendData = ArrayHelper.join(recvData, packet.getData());
 		sequence +=packet.getData().length;
 		TCPPacket p = null;
 		do {
@@ -83,103 +104,7 @@ public class Conversation
 		return sequence;
 	}
 	
-	public void matchesRules(List<Rule> rules) {
-		for (int i=0;i<packets.size();i++) {
-			for (Rule r : rules) {
-				ProtocolRule rule = (ProtocolRule)r;
-				if (basicCheck(rule, packets.get(0))) {
-						int skipCount = 0;
-					for (int j=0;j<rule.getSubRule().size();j++) {
-						if (i+j+skipCount < packets.size() && !isSkippable(packets.get(i+j+skipCount))) {
-							TCPPacket packet = packets.get(i+j+skipCount);
-							boolean isReceive = isReceived(packet);
-							String data = null;
-							try
-							{data=new String(packet.getData(),"ISO-8859-1");
-							}catch(Exception exc){exc.printStackTrace();}
-							SubRule srule = rule.getSubRule().get(j);
-							if (flagsMatch(packet,srule) &&
-									(isReceive && srule.isReceived() && srule.getPattern().matcher(data).find()) ||
-									(!isReceive && !srule.isReceived() && srule.getPattern().matcher(data).find())) {
-								if (j + 1 == rule.getSubRule().size()) {
-									System.out.println("Rule: " +rule.getName());
-								}
-							}
-							else {
-								//System.out.println("Rule: "+rule.getName());
-								//System.out.println(j+" "+isReceive+" " + srule.isReceived() + " " + srule.getPattern().matcher(data).find() + " " + flagsMatch(packet, srule)+" "+data+" "+srule.getPattern().pattern());
-								break;
-							}
-						}
-						else if (i+j+skipCount < packets.size() && isSkippable(packets.get(i+j+skipCount)))
-						{
-							j--;
-							skipCount++;
-						}
-							//System.out.println(i+j+skipCount);
-					}
-				}
-			}
-		}
-	}
-	private boolean isSkippable(TCPPacket packet) {
-		boolean result = false;
-		if (packet.isAck() && (packet.getData() == null || packet.getData().length==0)) {
-			result = true;
-		}
-		return result;
-	}
-	private boolean flagsMatch(TCPPacket packet, SubRule srule)
-	{
-		if (srule.getFlags() == null)
-		{
-			return true;
-		}
-		int count = 0;
-		int count2 = 0;
-		if (packet.isAck()) count++;
-		if (packet.isFin()) count++;
-		if (packet.isPsh()) count++;
-		if (packet.isRst()) count++;
-		if (packet.isSyn()) count++;
-		if (packet.isUrg()) count++;
-		for (char flag : srule.getFlags())
-		{
-			if (flag == IDS.ACK && packet.isAck()) count2++;
-			if (flag == IDS.FIN && packet.isFin()) count2++;
-			if (flag == IDS.PSH && packet.isPsh()) count2++;
-			if (flag == IDS.RST && packet.isRst()) count2++;
-			if (flag == IDS.SYN && packet.isSyn()) count2++;
-			if (flag == IDS.URG && packet.isUrg()) count2++;
-		}
-		//System.out.println(count + " " + count2 + " "+ srule.getFlags().size());
-		return count == count2;
-	}
-	private boolean basicCheck(ProtocolRule rule, TCPPacket packet)
-	{
-		boolean isReceive = isReceived(packet);
-		String srcPort = isReceive ? rule.getDstPort() : rule.getSrcPort();
-		String dstPort = isReceive ? rule.getSrcPort() : rule.getDstPort();
-		if (!srcPort.equals("any") &&
-		    packet.getSourcePort() != Integer.parseInt(srcPort))
-		{
-			return false;
-		}
-		if (!dstPort.equals("any") &&
-			packet.getDestinationPort() != Integer.parseInt(dstPort))
-		{
-			return false;
-		}
-		
-		if (!rule.getIp().equals("any") &&
-			((isReceive && !packet.getSourceAddress().equals(rule.getIp())) ||
-			 (!isReceive && !packet.getDestinationAddress().equals(rule.getIp()))))
-		{
-			return false;
-		}
-		return true;
-	}
-	private boolean isReceived(TCPPacket packet)
+	public boolean isReceived(TCPPacket packet)
 	{
 		return packet.getDestinationAddress().equals(host);
 	}
@@ -187,4 +112,37 @@ public class Conversation
 	public boolean isFinished() {
 		return finished;
 	}
+
+	public List<TCPPacket> getPackets() {
+		return packets;
+	}
+
+	public void setPackets(List<TCPPacket> packets) {
+		this.packets = packets;
+	}
+
+	public byte[] getSendData() {
+		return sendData;
+	}
+
+	public void setSendData(byte[] sendData) {
+		this.sendData = sendData;
+	}
+
+	public byte[] getRecvData() {
+		return recvData;
+	}
+
+	public void setRecvData(byte[] recvData) {
+		this.recvData = recvData;
+	}
+
+	public long getCount() {
+		return count;
+	}
+
+	public void setCount(long count) {
+		this.count = count;
+	}
+	
 }

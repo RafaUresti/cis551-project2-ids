@@ -1,45 +1,18 @@
-
+import java.util.regex.Pattern;
 
 
 public class StreamRule extends Rule {
 
 	private String type ="tcp_stream";
-	private String src_port;
-	private String dst_port;
-	private String ip;
 	private boolean isReceive;
 	private String data;
-	
+	private Pattern pattern;
 	public String getType() {
 		return type;
 	}
 	
 	public void setType(String type) {
 		this.type = type;
-	}
-	
-	public String getSrcPort() {
-		return src_port;
-	}
-	
-	public void setSrcPort(String src_port) {
-		this.src_port = src_port;
-	}
-	
-	public String getDstPort() {
-		return dst_port;
-	}
-	
-	public void setDstPort(String dst_port) {
-		this.dst_port = dst_port;
-	}
-	
-	public String getIp() {
-		return ip;
-	}
-	
-	public void setIp(String ip) {
-		this.ip = ip;
 	}
 
 	public boolean isReceive() {
@@ -56,18 +29,27 @@ public class StreamRule extends Rule {
 
 	public void setData(String data) {
 		this.data = data;
+		pattern = Pattern.compile(data);
+	}
+
+	public Pattern getPattern() {
+		return pattern;
+	}
+
+	public void setPattern(Pattern pattern) {
+		this.pattern = pattern;
 	}
 
 	public void print_rules() {
 		super.print_rules();
 		if(type != null)
 			System.out.println("Rule Type : "+ type);
-		if(src_port != null)
-			System.out.println("Source Port : "+ src_port);
-		if(dst_port!=null)
-			System.out.println("Dest Port : "+ dst_port);
-		if(ip!=null)
-			System.out.println("IP : "+ ip);
+		if(getSrcPort() != null)
+			System.out.println("Source Port : "+ getSrcPort());
+		if(getDstPort()!=null)
+			System.out.println("Dest Port : "+ getDstPort());
+		if(getIp()!=null)
+			System.out.println("IP : "+ getIp());
 		
 		System.out.println((isReceive ?"Recv : \"" : "Send : \"")+ data+"\"");
 	}

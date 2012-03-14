@@ -1,5 +1,4 @@
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -16,21 +15,21 @@ public class Stream {
 	private int destport;
 	private String ip;
 	
-	private long sendIniSeqNumber=-1;
-	private long sendCurrentSeqNumber=-1;
+	private long sendSeqNumber=-1;
 	private byte[] dataSend = null;
 
 	//data sent to early (is it possible ?)
 	private Hashtable<Long, byte[]> dataSentWait = new Hashtable<Long, byte[]>();
 	
-	private long recIniSeqNumber=-1;
-	private long recCurrentSeqNumber=-1;
+	private long recSeqNumber=-1;
 	private byte[] dataRecv = null;
 
 	//data received to early ()
 	private Hashtable<Long, byte[]> dataRecvWait = new Hashtable<Long, byte[]>();
 	
 	private boolean finIsSet = false;
+	
+	private int count = 0;
 	
 	public int getSrcport() {
 		return srcport;
@@ -49,42 +48,38 @@ public class Stream {
 	}
 
 	//Constructor to initialize the stream
-	public Stream (TCPPacket packet, String recORsent) {
-		if (recORsent.equals("recv")) {
+	public Stream (TCPPacket packet, boolean received) {
+		if (received) {
 			//This packet was received by the host
 			this.srcport = packet.getDestinationPort();
 			this.destport = packet.getSourcePort();
 			this.ip = packet.getSourceAddress();
-			
-			if (!packet.isSyn()) {
-				if (packet.getData().length!=0) {this.dataRecv = packet.getData();}
-			}
 		}
 		else {
 			//This packet was sent by the host
 			this.srcport = packet.getSourcePort();
 			this.destport = packet.getDestinationPort();
 			this.ip = packet.getDestinationAddress();
-			
-			if (!packet.isSyn()) {
-				if (packet.getData().length!=0) {this.dataRecv = packet.getData();}
-			}
+		}
+		if (!packet.isSyn()) {
+			if (packet.getData().length!=0) {this.dataRecv = packet.getData();}
 		}
 	}
 	
 	//Constructor do add a new packet to the stream
-	public void addPacket (TCPPacket packet, String recORsent) throws UnsupportedEncodingException {
+	public void addPacket (TCPPacket packet, boolean received) throws UnsupportedEncodingException {
+		count++;
 		if (packet.isFin()||packet.isRst()) {
 			//The communication is over
 			this.finIsSet = true; 
 		}
 		else {
-			if (recORsent.equals("recv")) {
+			if (received) {
 				//This packet was received by the host
-				if (this.recIniSeqNumber==-1) {
+				if (this.recSeqNumber==-1) {
 					//It must be the first received packet
-					this.recIniSeqNumber = packet.getSequenceNumber();
-					if (packet.isSyn()) {this.recCurrentSeqNumber = this.recIniSeqNumber+1;}
+					this.recSeqNumber = packet.getSequenceNumber();
+					if (packet.isSyn()) {this.recSeqNumber = this.recSeqNumber+1;}
 					else {
 						//We add the data
 						if (dataRecv==null) {
@@ -95,7 +90,7 @@ public class Stream {
 							this.dataRecv = ArrayHelper.join(this.dataRecv, packet.getData());
 							}
 						}
-						this.recCurrentSeqNumber = this.recIniSeqNumber+packet.getData().length;
+						this.recSeqNumber = this.recSeqNumber+packet.getData().length;
 					}				
 				}
 				else {
@@ -103,7 +98,7 @@ public class Stream {
 					
 					//We get back the data
 					
-					if (packet.getSequenceNumber()==this.recCurrentSeqNumber) {
+					if (packet.getSequenceNumber()==this.recSeqNumber) {
 						//If it is the next packet we are expecting
 //						System.out.println("packet expected");
 						
@@ -118,7 +113,7 @@ public class Stream {
 						}
 						
 						//We now wait for the next packet
-						this.recCurrentSeqNumber+= packet.getData().length;
+						this.recSeqNumber+= packet.getData().length;
 					}					
 					else {
 						//The packet we were expecting has been delayed, or arrived earlier
@@ -129,47 +124,19 @@ public class Stream {
 						//We call the function to check if the right packet(s) arrived earlier
 						this.gatherData("recv");
 					}
-					String test = null;
-					
-//					if (!(this.dataRecv==null)){
-//						//ASCII string of data received
-////						System.out.println("received :" + new String(dataRecv, "ISO-8859-1"));
-////						
-//						//Hex version of data received
-//						
-////						String hexRes = null;
-////						for (int i=0; i<dataRecv.length; i++){
-////							hexRes+=Integer.toHexString(dataRecv[i]);
-////						}
-////						System.out.println("received to hex : "+ hexRes);
-//					
-//					
-////					byte[] backTobytes = new byte[hexRes.length()/2];
-////					int j = 0;
-////					for (int i =; i<hexRes.length();i+=2){
-////						backTobytes[j++] = Byte.parseByte(hexRes.substring(i , i+2) , 16);
-////					}
-////					test = new String (backTobytes, "ISO-8859-1");
-////					System.out.println("Test : "+test);
-////					
-//					}
-////					Hex version of UTF-8 String version of "now I own your computer"
-//					String nowIown = "Now I own your computer";
-//					String nowIhex = String.format("%x", new BigInteger(nowIown.getBytes("ISO-8859-1")));
-//					System.out.println("Hex value of nowIown : "+nowIhex);
 				}
 			}
 			else {
 				//This packet was sent by the host
-				if (this.sendIniSeqNumber==-1) {
+				if (this.sendSeqNumber==-1) {
 					//It must be the first packet sent
-					this.sendIniSeqNumber = packet.getSequenceNumber();
-					if (packet.isSyn()) {this.sendCurrentSeqNumber = this.sendIniSeqNumber+1;}
-					else {this.sendCurrentSeqNumber = this.sendIniSeqNumber+packet.getData().length;}	
+					this.sendSeqNumber = packet.getSequenceNumber();
+					if (packet.isSyn()) {this.sendSeqNumber = this.sendSeqNumber+1;}
+					else {this.sendSeqNumber = this.sendSeqNumber+packet.getData().length;}	
 				}
 				else {
 					//This is a data packet
-					if (packet.getSequenceNumber()==this.sendCurrentSeqNumber) {
+					if (packet.getSequenceNumber()==this.sendSeqNumber) {
 						
 						if (this.dataSend==null) {
 							this.dataSend = packet.getData();	
@@ -179,7 +146,7 @@ public class Stream {
 						}
 						
 						//We now wait for the next packet
-						this.sendCurrentSeqNumber+= packet.getData().length;
+						this.sendSeqNumber+= packet.getData().length;
 					}
 					else {
 						//The packet we were expecting has been delayed, or arrived earlier
@@ -190,32 +157,33 @@ public class Stream {
 						//We call the function to check if the right packet(s) arrived earlier
 						this.gatherData("send");
 					}
-//					if (!(this.dataSend==null)){
-//				//		System.out.println("Sent :" + new String(dataSend));
-//					}
 				}
 			}
 		}
+	}
+	
+	public int size() {
+		return count;
 	}
 	
 	//Function to get back data from the inner hashtable
 	private void gatherData (String recvORsend) {
 		if (recvORsend.equals("recv")) {
 			//We compute the received data
-			while (this.dataRecvWait.containsKey(this.recCurrentSeqNumber)) {
-				byte[] dataToadd = this.dataRecvWait.get(this.recCurrentSeqNumber);
+			while (this.dataRecvWait.containsKey(this.recSeqNumber)) {
+				byte[] dataToadd = this.dataRecvWait.get(this.recSeqNumber);
 				//We add the data		
 				this.dataRecv = ArrayHelper.join(this.dataRecv, dataToadd);				
-				this.recCurrentSeqNumber+=dataToadd.length;
+				this.recSeqNumber+=dataToadd.length;
 			}
 		}
 		else {
 			//We compute the sent data
-			while (this.dataSentWait.containsKey(this.sendCurrentSeqNumber)) {
-				byte[] dataToadd = this.dataSentWait.get(this.sendCurrentSeqNumber);
+			while (this.dataSentWait.containsKey(this.sendSeqNumber)) {
+				byte[] dataToadd = this.dataSentWait.get(this.sendSeqNumber);
 				//We add the data		
 				this.dataSend = ArrayHelper.join(this.dataSend, dataToadd);
-				this.sendCurrentSeqNumber++;
+				this.sendSeqNumber++;
 			}
 		}
 	} 
@@ -294,7 +262,7 @@ public class Stream {
 					
 					//Regular expression over what is received
 					if (currentStreamRule.isReceive()) {
-						recPattern = Pattern.compile(currentStreamRule.getData().substring(1,currentStreamRule.getData().length()-1));
+						recPattern = Pattern.compile(currentStreamRule.getData());
 						String rec = null;
 						if (this.dataRecv!=null) {
 							try {

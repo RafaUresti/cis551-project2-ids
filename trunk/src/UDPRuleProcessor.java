@@ -3,21 +3,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.sourceforge.jpcap.net.Packet;
-import net.sourceforge.jpcap.net.TCPPacket;
 import net.sourceforge.jpcap.net.UDPPacket;
-public class ProtocolRuleProcessor
-{
-	private List<Rule> udpRules;
-	private List<Rule> tcpRules;
+
+
+public class UDPRuleProcessor {
+	
+	private List<ProtocolRule> udpRules;
 	private Map<Rule, Integer> udpMap;
-	private Map<String, Conversation> tcpMap;
 	private String host;
 	
-	public ProtocolRuleProcessor(List<Rule> rules)
+	public UDPRuleProcessor(List<Rule> rules)
 	{
 		udpMap = new HashMap<Rule, Integer>();
-		tcpMap = new HashMap<String, Conversation>();
 		if (rules.size() > 0)
 		{
 			host = rules.get(0).getHost();
@@ -26,47 +23,8 @@ public class ProtocolRuleProcessor
 		cacheRules(rules);
 
 	}
-
 	
-	public void processRules(Packet packet)
-	{
-		if (packet instanceof UDPPacket)
-		{
-			processUDP((UDPPacket)packet);
-		}
-		else if (packet instanceof TCPPacket)
-		{
-			try{
-			processTCP((TCPPacket)packet);
-			}catch(Exception exc) {exc.printStackTrace();}
-		}
-	}
-
-	private void processTCP(TCPPacket packet) throws Exception {
-		boolean isReceive = packet.getDestinationAddress().equals(host);
-		String address = isReceive ? packet.getSourceAddress() :packet.getDestinationAddress();
-		int dstPort = isReceive ? packet.getDestinationPort() : packet.getSourcePort();
-		int srcPort = isReceive ? packet.getSourcePort() :packet.getDestinationPort();
-		
-		//We generate a key which will identify the stream
-		String key = address + ":" +
-				dstPort + ":" +
-				srcPort;
-		
-		Conversation conversation = tcpMap.get(key);
-		if (conversation == null) {
-			conversation = new Conversation(host);
-			tcpMap.put(key, conversation);
-		}
-		conversation.addPacket(packet);
-		
-		conversation.matchesRules(tcpRules);
-		
-		if (conversation.isFinished()) {
-			tcpMap.remove(key);
-		}
-	}	
-	private void processUDP(UDPPacket packet)
+	public void processRules(UDPPacket packet)
 	{
 		boolean isReceive = packet.getDestinationAddress().equals(host);
 		for (Rule rule : udpRules) {
@@ -116,16 +74,12 @@ public class ProtocolRuleProcessor
 	}
 	
 	private void cacheRules(List<Rule> rules) {
-		udpRules = new ArrayList<Rule>();
-		tcpRules = new ArrayList<Rule>();
+		udpRules = new ArrayList<ProtocolRule>();
 		for (Rule rule : rules) {
 			if (rule instanceof ProtocolRule) {
 				ProtocolRule pr = (ProtocolRule)rule;
 				if (pr.getProtocol().equals("udp")) {
-					udpRules.add(rule);
-				}
-				else {
-					tcpRules.add(rule);
+					udpRules.add(pr);
 				}
 			}
 		}
