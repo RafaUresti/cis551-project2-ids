@@ -34,7 +34,8 @@ packet is added, providing real-time alarms for rule violations.
 	  the UDPSession described below.
 	- For Stream rules, the stream bytes are concatenated real-time in order
 	  to provide a string to compare. The rules are compared against the string
-	  being built with each packet received.
+	  being built with each packet received.  A rule can only be violated once per
+	  session, that way it is not flagged multiple times for the same violation.
 
 TCPSession - Class that keeps track of a TCP session. This class ensures that
 packets are ordered correctly, that a sent packet is not processed a second
@@ -48,5 +49,5 @@ rules above.
 UDPSession - Simple wrapper that keeps track of rules that are currently in
 progress. If the same data is repeated multiple times in sub rules, there is a
 possibility that the rule could be in progress multiple times at once, so a
-Rule, to List of Sub Rule map is contained in the UDPSession in order to keep
+Rule->"List of Sub Rule" map is contained in the UDPSession in order to keep
 track of all possible interpretations of the data with regard to the rule.
