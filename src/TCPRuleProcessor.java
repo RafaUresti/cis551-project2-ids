@@ -122,7 +122,7 @@ public class TCPRuleProcessor
 								}
 								if (pindex == packets.size()-1)
 								{
-									keepPacket = true;
+									//keepPacket = true;
 								}
 							}
 							else {
@@ -142,8 +142,8 @@ public class TCPRuleProcessor
 			}
 			if (!keepPacket)
 			{
-				packets.remove(0);
-				pindex--;
+				//packets.remove(0);
+				//pindex--;
 			}
 		}
 	}
