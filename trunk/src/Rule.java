@@ -3,10 +3,7 @@
 public class Rule
 {
 	private String host; // the ip address of the host
-	private String name; 				// the name of the rule that should be printed when a match occurs
-	private StreamRule s_rule=null; 			//the stream rule
-	private ProtocolRule p_rule=null;		//the protocol rule
-	
+	private String name; // the name of the rule that should be printed when a match occurs
 	
 	public Rule() {
 	}
@@ -17,18 +14,6 @@ public class Rule
 	
 	public String getHost() {
 		return host;
-	}
-	public StreamRule getSrule() {
-		return s_rule;
-	}
-	public void setSrule(StreamRule s_rule) {
-		this.s_rule = s_rule;
-	}
-	public ProtocolRule getPrule() {
-		return p_rule;
-	}
-	public void setPrule(ProtocolRule p_rule) {
-		this.p_rule = p_rule;
 	}
 	public String getName() {
 		return name;
@@ -42,20 +27,5 @@ public class Rule
 			System.out.println("Host : "+ host);
 		if(name != null)
 			System.out.println("Name : "+ name);
-		if(s_rule!=null)
-		  print_strules(s_rule);
-		if(p_rule!=null)
-			print_prules(p_rule);
-		}
-	
-		private void print_prules(ProtocolRule p_rule2) {			
-			p_rule2.print_rules();
-			
-		}
-		private void print_strules(StreamRule s_rule2) {
-			
-			s_rule2.print_rules();
-			
-		}
-	
+	}
 }

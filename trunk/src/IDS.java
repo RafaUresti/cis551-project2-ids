@@ -3,8 +3,19 @@ import java.util.List;
 
 import net.sourceforge.jpcap.capture.PacketCapture;
 
+/**
+ * The main class for the intrusion detection system.
+ * 
+ */
 public class IDS
 {
+	public static final char ACK = 'A';
+	public static final char SYN = 'S';
+	public static final char FIN = 'F';
+	public static final char RST = 'R';
+	public static final char URG = 'U';
+	public static final char PSH = 'P';
+	
 	public static void main(String[] args) throws IOException
 	{   
 		List<Rule> rules = null;

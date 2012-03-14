@@ -263,8 +263,8 @@ public class Stream {
 			
 			currentRule = nextRule.next();
 			//We only want to test 
-			if (currentRule.getSrule()!=null) {
-				currentStreamRule = currentRule.getSrule();
+			if (currentRule instanceof StreamRule) {
+				currentStreamRule = (StreamRule)currentRule;
 				
 				if (currentStreamRule.getSrcPort().equals("any")) {
 					srcportMatch = true;
@@ -293,8 +293,8 @@ public class Stream {
 				if (firstMatch) {
 					
 					//Regular expression over what is received
-					if (currentStreamRule.getRecv()!=null) {
-						recPattern = Pattern.compile(currentStreamRule.getRecv().substring(1,currentStreamRule.getRecv().length()-1));
+					if (currentStreamRule.isReceive()) {
+						recPattern = Pattern.compile(currentStreamRule.getData().substring(1,currentStreamRule.getData().length()-1));
 						String rec = null;
 						if (this.dataRecv!=null) {
 							try {
@@ -316,8 +316,8 @@ public class Stream {
 					}
 					
 					//Regular expression over what is sent
-					if (currentStreamRule.getSnd()!=null) {
-						sendPattern = Pattern.compile(currentStreamRule.getSnd().substring(1,currentStreamRule.getSnd().length()-1));
+					if (!currentStreamRule.isReceive()) {
+						sendPattern = Pattern.compile(currentStreamRule.getData());
 						String sen = null;
 						try {
 							if (dataSend!=null) {

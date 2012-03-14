@@ -1,14 +1,14 @@
 
 
 
-public class StreamRule {
+public class StreamRule extends Rule {
 
 	private String type ="tcp_stream";
 	private String src_port;
 	private String dst_port;
 	private String ip;
-	private String snd;
-	private String recv;
+	private boolean isReceive;
+	private String data;
 	
 	public String getType() {
 		return type;
@@ -41,25 +41,25 @@ public class StreamRule {
 	public void setIp(String ip) {
 		this.ip = ip;
 	}
-	
-	public String getSnd() {
-		return snd;
-	}
-	
-	public void setSnd(String snd) {
-		this.snd = snd;
-	}
-	
-	public String getRecv() {
-		return recv;
-	}
-	
-	public void setRecv(String recv) {
-		this.recv = recv;
+
+	public boolean isReceive() {
+		return isReceive;
 	}
 
+	public void setReceive(boolean isReceive) {
+		this.isReceive = isReceive;
+	}
+
+	public String getData() {
+		return data;
+	}
+
+	public void setData(String data) {
+		this.data = data;
+	}
 
 	public void print_rules() {
+		super.print_rules();
 		if(type != null)
 			System.out.println("Rule Type : "+ type);
 		if(src_port != null)
@@ -68,13 +68,7 @@ public class StreamRule {
 			System.out.println("Dest Port : "+ dst_port);
 		if(ip!=null)
 			System.out.println("IP : "+ ip);
-		if(snd!=null){
-			System.out.println("Send : "+ snd);
-		}
-		if(recv!=null){
-			System.out.println("Recv : "+ recv);
-		}
-			
 		
+		System.out.println(isReceive ?"Recv : " : "Send : "+ data);
 	}
 }
