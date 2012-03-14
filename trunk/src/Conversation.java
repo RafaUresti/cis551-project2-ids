@@ -1,9 +1,7 @@
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import net.sourceforge.jpcap.net.TCPPacket;
 import net.sourceforge.jpcap.util.ArrayHelper;
@@ -23,8 +21,10 @@ public class Conversation
 	private long recvSequence = -1;
 	private boolean finished;
 	private long count = 0;
+	private List<Rule> violatedRules;
 	public Conversation(String host)
 	{
+		violatedRules = new ArrayList<Rule>();
 		sendWaiting = new HashMap<Long, TCPPacket>();
 		recvWaiting = new HashMap<Long, TCPPacket>();
 		packets = new ArrayList<TCPPacket>();
@@ -144,5 +144,12 @@ public class Conversation
 	public void setCount(long count) {
 		this.count = count;
 	}
-	
+	public void addRule(Rule rule)
+	{
+		violatedRules.add(rule);
+	}
+	public boolean containsRule(Rule rule)
+	{
+		return violatedRules.contains(rule);
+	}
 }
