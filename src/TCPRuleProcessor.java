@@ -69,10 +69,16 @@ public class TCPRuleProcessor
 		}
 	}	
 	
-
-	public void matchProtocolRules(Conversation stream) throws Exception {
+	/**
+	 * Compare the stream to the protocol rules.
+	 * 
+	 * @param stream
+	 * @throws Exception
+	 */
+	private void matchProtocolRules(Conversation stream) throws Exception {
 		List<TCPPacket> packets = stream.getPackets();
 		for (int pindex=0;pindex<packets.size();pindex++) {
+			boolean keepPacket = false;
 			for (ProtocolRule rule : protocolRules) {
 				if (!stream.containsRule(rule) && basicCheck(rule, packets.get(0))) {
 					int skipCount = 0;
@@ -89,6 +95,10 @@ public class TCPRuleProcessor
 								if (subIndex + 1 == rule.getSubRule().size()) {
 									flagRule(rule, stream);
 								}
+								if (pindex == packets.size()-1)
+								{
+									keepPacket = true;
+								}
 							}
 							else {
 								//System.out.println("Rule: "+rule.getName());
@@ -96,7 +106,7 @@ public class TCPRuleProcessor
 								break;
 							}
 						}
-						else if (pindex+subIndex+skipCount < packets.size()/* && isSkippable(packets.get(pindex+subIndex+skipCount))*/)
+						else if (pindex+subIndex+skipCount < packets.size() /*&& isSkippable(packets.get(pindex+subIndex+skipCount))*/)
 						{
 							subIndex--;
 							skipCount++;
@@ -104,6 +114,11 @@ public class TCPRuleProcessor
 							//System.out.println(i+j+skipCount);
 					}
 				}
+			}
+			if (!keepPacket)
+			{
+				packets.remove(0);
+				pindex--;
 			}
 		}
 	}
@@ -139,44 +154,53 @@ public class TCPRuleProcessor
 	}
 	
 	/**
-	 * 
+	 * Determines whether the number and type of flags match
+	 * between a packet and a rule.
 	 * 
 	 * @param packet
+	 * @param srule
 	 * @return
 	 */
-	/**private boolean isSkippable(TCPPacket packet) {
-		boolean result = false;
-		if (packet.isAck() && (packet.getData() == null || packet.getData().length==0)) {
-			result = true;
-		}
-		return result;
-	}**/
 	private boolean flagsMatch(TCPPacket packet, SubRule srule)
 	{
+		// If flags is null, we do not care.
 		if (srule.getFlags() == null)
 		{
 			return true;
 		}
-		int count = 0;
-		int count2 = 0;
-		if (packet.isAck()) count++;
-		if (packet.isFin()) count++;
-		if (packet.isPsh()) count++;
-		if (packet.isRst()) count++;
-		if (packet.isSyn()) count++;
-		if (packet.isUrg()) count++;
+		int packetCount = 0;
+		int ruleCount = 0;
+		// Get the packet count.
+		if (packet.isAck()) packetCount++;
+		if (packet.isFin()) packetCount++;
+		if (packet.isPsh()) packetCount++;
+		if (packet.isRst()) packetCount++;
+		if (packet.isSyn()) packetCount++;
+		if (packet.isUrg()) packetCount++;
+		
+		// Get the rule/packet count.
 		for (char flag : srule.getFlags())
 		{
-			if (flag == IDS.ACK && packet.isAck()) count2++;
-			if (flag == IDS.FIN && packet.isFin()) count2++;
-			if (flag == IDS.PSH && packet.isPsh()) count2++;
-			if (flag == IDS.RST && packet.isRst()) count2++;
-			if (flag == IDS.SYN && packet.isSyn()) count2++;
-			if (flag == IDS.URG && packet.isUrg()) count2++;
+			if (flag == IDS.ACK && packet.isAck()) ruleCount++;
+			if (flag == IDS.FIN && packet.isFin()) ruleCount++;
+			if (flag == IDS.PSH && packet.isPsh()) ruleCount++;
+			if (flag == IDS.RST && packet.isRst()) ruleCount++;
+			if (flag == IDS.SYN && packet.isSyn()) ruleCount++;
+			if (flag == IDS.URG && packet.isUrg()) ruleCount++;
 		}
-		//System.out.println(count + " " + count2 + " "+ srule.getFlags().size());
-		return count == count2;
+		
+		// Compare counts and return the result.
+		return packetCount == ruleCount;
 	}
+	
+	/**
+	 * Compares all common aspects of rules to the packet (i.e. Source
+	 * Port, Destination Port, Other IP Address).
+	 * 
+	 * @param rule
+	 * @param packet
+	 * @return
+	 */
 	private boolean basicCheck(Rule rule, TCPPacket packet)
 	{
 		boolean isReceive = isReceived(packet);
@@ -201,11 +225,24 @@ public class TCPRuleProcessor
 		}
 		return true;
 	}
+	/**
+	 * Determines if this packet is being received by the host or
+	 * set by the host (True=Received, False=Sent).
+	 * 
+	 * @param packet
+	 * @return
+	 */
 	public boolean isReceived(TCPPacket packet)
 	{
 		return packet.getDestinationAddress().equals(host);
 	}
 	
+	/**
+	 * Saves the rules by type so that non-applicable rules are not
+	 * checked.
+	 * 
+	 * @param rules
+	 */
 	private void cacheRules(List<Rule> rules) {
 		protocolRules = new ArrayList<ProtocolRule>();
 		streamRules = new ArrayList<StreamRule>();
