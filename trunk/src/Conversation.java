@@ -20,7 +20,6 @@ public class Conversation
 	private long sendSequence = -1;
 	private long recvSequence = -1;
 	private boolean finished;
-	private long count = 0;
 	private List<Rule> violatedRules;
 	public Conversation(String host)
 	{
@@ -33,7 +32,6 @@ public class Conversation
 	
 	public void addPacket(TCPPacket packet)
 	{
-		count++;
 		if (packet.isFin()||packet.isRst()) {
 			System.out.println("Finished");
 			this.finished = true; 
@@ -135,14 +133,6 @@ public class Conversation
 
 	public void setRecvData(byte[] recvData) {
 		this.recvData = recvData;
-	}
-
-	public long getCount() {
-		return count;
-	}
-
-	public void setCount(long count) {
-		this.count = count;
 	}
 	public void addRule(Rule rule)
 	{

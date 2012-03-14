@@ -11,6 +11,7 @@ public class UDPRuleProcessor {
 	private List<ProtocolRule> udpRules;
 	private Map<Rule, Integer> udpMap;
 	private String host;
+	private int count;
 	
 	public UDPRuleProcessor(List<Rule> rules)
 	{
@@ -26,6 +27,7 @@ public class UDPRuleProcessor {
 	
 	public void processRules(UDPPacket packet)
 	{
+		count++;
 		boolean isReceive = packet.getDestinationAddress().equals(host);
 		for (Rule rule : udpRules) {
 			ProtocolRule prule = (ProtocolRule)rule;
@@ -60,7 +62,7 @@ public class UDPRuleProcessor {
 			if ((isReceive && srule.isReceived() && srule.getPattern().matcher(data).find()) ||
 				(!isReceive && !srule.isReceived() && srule.getPattern().matcher(data).find())) {
 				if (subRule + 1 == prule.getSubRule().size()) {
-					System.out.println("Rule: " +rule.getName());
+					System.out.println("Rule: " +rule.getName()+" UDP Packet # "+count);
 					udpMap.remove(rule);
 				}
 				else {

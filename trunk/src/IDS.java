@@ -43,11 +43,5 @@ public class IDS
 		{
 			exc.printStackTrace();
 		}
-		
-		for(int i=0; i< rules.size(); i++)
-		{
-			System.out.print(i+"| ");
-			rules.get(i).print_rules();
-		}
 	}
 }
