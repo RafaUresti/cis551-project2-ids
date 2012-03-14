@@ -6,8 +6,15 @@ import java.util.Map;
 import net.sourceforge.jpcap.net.TCPPacket;
 import net.sourceforge.jpcap.util.ArrayHelper;
 
-
-public class Conversation 
+/**
+ * Class that represents a TCP session.  It keeps track
+ * of a stream of data, as well as individual packets for
+ * protocol rules.
+ * 
+ * @author bbreck
+ *
+ */
+public class TCPSession 
 {
 	private String host;
 	
@@ -21,7 +28,7 @@ public class Conversation
 	private long recvSequence = -1;
 	private boolean finished;
 	private List<Rule> violatedRules;
-	public Conversation(String host)
+	public TCPSession(String host)
 	{
 		violatedRules = new ArrayList<Rule>();
 		sendWaiting = new HashMap<Long, TCPPacket>();
@@ -40,6 +47,7 @@ public class Conversation
 		
 		// If this is an ack, remove the sent packet from our hashtable.
 		if (!isReceived && packet.isAck() && packet.getData() == null) {
+			// remove an acknowledged packet from the send map.
 			sendWaiting.remove(packet.getAcknowledgementNumber());
 			sendSequence = packet.getSequenceNumber()+packet.getData().length;
 		}
@@ -47,7 +55,7 @@ public class Conversation
 		{
 			recvSequence = packet.getSequenceNumber()+packet.getData().length;
 		}
-		// Otherwise add to the receive list
+		// Otherwise add to the receive list.
 		else if (isReceived)
 		{
 			if (recvSequence == -1) {
@@ -59,9 +67,12 @@ public class Conversation
 				recvSequence = addAdditional(packet, recvSequence, recvWaiting);
 			}
 			else {
+				// This was received out of order, add to the map and wait
+				// for the packet to come in order.
 				recvWaiting.put(packet.getSequenceNumber(), packet);
 			}
 		}
+		// If this is a send, and to the send list.
 		else if (!sendWaiting.containsValue(packet.getSequenceNumber())){
 			if (sendSequence == -1) {
 				sendSequence = packet.getSequenceNumber()+packet.getData().length;
@@ -71,13 +82,24 @@ public class Conversation
 			else if (sendSequence == packet.getSequenceNumber()) {
 				sendSequence = addAdditional(packet, sendSequence, sendWaiting);
 			}
-			// Keep the history of packets
+			// Keep the history of packets, that way we don't add it twice if
+			// it needs to be resent.
 			sendWaiting.put(packet.getSequenceNumber(), packet);
 		}
 	}
 	
+	/**
+	 * Adds the received packets as well as any additional packets that were
+	 * received out of order.
+	 * 
+	 * @param packet
+	 * @param sequence
+	 * @param waiting
+	 * @return
+	 */
 	private long addAdditional(TCPPacket packet, long sequence, Map<Long, TCPPacket> waiting)
 	{
+		// Add the current packet.
 		packets.add(packet);
 		if (isReceived(packet))
 			recvData = ArrayHelper.join(recvData, packet.getData());
@@ -85,49 +107,68 @@ public class Conversation
 			sendData = ArrayHelper.join(recvData, packet.getData());
 		sequence +=packet.getData().length;
 		TCPPacket p = null;
+		
+		// Add any additional packets that may have been received out of order.
 		do {
 			p = waiting.get(sequence);
 			if (p != null) {
 				packets.add(p);
 				waiting.remove(sequence);
 				sequence+=packet.getData().length;
+				if (isReceived(packet))
+					recvData = ArrayHelper.join(recvData, packet.getData());
+				else
+					sendData = ArrayHelper.join(recvData, packet.getData());
 			}
 		} while (p != null);
 		return sequence;
 	}
 	
-	public boolean isReceived(TCPPacket packet)
+	/**
+	 * Determines if the host was the receiver of the packet.
+	 * 
+	 * @param packet
+	 * @return
+	 */
+	private boolean isReceived(TCPPacket packet)
 	{
 		return packet.getDestinationAddress().equals(host);
 	}
 
+	/**
+	 * Determines if the connection is finished.
+	 * 
+	 * @return
+	 */
 	public boolean isFinished() {
 		return finished;
 	}
 
+	/**
+	 * Get the packets in conversation order.
+	 */
 	public List<TCPPacket> getPackets() {
 		return packets;
 	}
 
-	public void setPackets(List<TCPPacket> packets) {
-		this.packets = packets;
-	}
-
+	/**
+	 * Get the sent data.
+	 */
 	public byte[] getSendData() {
 		return sendData;
 	}
 
-	public void setSendData(byte[] sendData) {
-		this.sendData = sendData;
-	}
-
+	/**
+	 * Get the received data.
+	 */
 	public byte[] getRecvData() {
 		return recvData;
 	}
-
-	public void setRecvData(byte[] recvData) {
-		this.recvData = recvData;
-	}
+	/**
+	 * Add a rule to the list of violated rules in this session.
+	 * 
+	 * @param rule
+	 */
 	public void addRule(Rule rule)
 	{
 		violatedRules.add(rule);
