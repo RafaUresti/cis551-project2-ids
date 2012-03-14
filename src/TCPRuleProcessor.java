@@ -109,7 +109,7 @@ public class TCPRuleProcessor
 			// Iterate over the rules for that packet
 			for (ProtocolRule rule : protocolRules) {
 			
-				if (!stream.containsRule(rule) && basicCheck(rule, packets.get(0))) {
+				if (!stream.containsRule(rule) && basicCheck(rule, packet)) {
 					// get the packets in progress for this rule.
 					List<Integer> ruleProgress = getRuleProgress(stream, rule);
 					List<Integer> newRuleList = new ArrayList<Integer>();
