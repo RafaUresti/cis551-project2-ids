@@ -1,13 +1,16 @@
 
-
+/**
+ *  Base class for all rules. Contains information
+ *  common to all rules.
+ */
 public class Rule
 {
 	private String host; // the ip address of the host
 	private String name; // the name of the rule that should be printed when a match occurs
-	private String protocol;
-	private String src_port;
-	private String dst_port;
-	private String ip;
+	private String protocol; // UDP or TCP
+	private String src_port; // The source port
+	private String dst_port; // The destination port
+	private String ip; // The IP address of the connecting host.
 	
 	public Rule() {
 	}

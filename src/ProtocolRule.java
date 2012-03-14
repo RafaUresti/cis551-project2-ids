@@ -1,10 +1,15 @@
 import java.util.ArrayList;
 import java.util.Iterator;
 
-
+/**
+ * Class that represents a protocol rule.
+ *
+ */
 public class ProtocolRule extends Rule {
 
+	// Identifies this rule as a protocol rule.
 	private String type = "protocol";
+	// list of sub rules.
 	private ArrayList<SubRule> sub_rule;
 	
 	public String getType() {

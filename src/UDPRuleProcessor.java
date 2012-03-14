@@ -5,17 +5,30 @@ import java.util.Map;
 
 import net.sourceforge.jpcap.net.UDPPacket;
 
-
+/**
+ * Class respsonible for matching TCP packets to TCP rules.
+ * 
+ * @author bbreck
+ *
+ */
 public class UDPRuleProcessor {
 	
+	// The list of UDP rules.
 	private List<ProtocolRule> udpRules;
-	private Map<Rule, Integer> udpMap;
+	
+	// Map that keeps track of rules in progress
+	private Map<String, UDPSession> udpMap;
 	private String host;
 	private int count;
 	
+	/**
+	 * Constructor that accepts a list of rules.
+	 * 
+	 * @param rules
+	 */
 	public UDPRuleProcessor(List<Rule> rules)
 	{
-		udpMap = new HashMap<Rule, Integer>();
+		udpMap = new HashMap<String, UDPSession>();
 		if (rules.size() > 0)
 		{
 			host = rules.get(0).getHost();
@@ -25,56 +38,116 @@ public class UDPRuleProcessor {
 
 	}
 	
+	/**
+	 * Process a UDP Packet.
+	 * 
+	 * @param packet
+	 */
 	public void processRules(UDPPacket packet)
 	{
 		count++;
-		boolean isReceive = packet.getDestinationAddress().equals(host);
+		
+		// Values are set based on where the data came from.
+			boolean isReceive = packet.getDestinationAddress().equals(host);
+			String address = isReceive ? packet.getSourceAddress() :packet.getDestinationAddress();
+			int dstPort = isReceive ? packet.getDestinationPort() : packet.getSourcePort();
+			int srcPort = isReceive ? packet.getSourcePort() :packet.getDestinationPort();
+			
+			//We generate a key which will identify the stream
+			String key = address + ":" +
+					dstPort + ":" +
+					srcPort;
+		
 		for (Rule rule : udpRules) {
+			
+			// Compare against the basic rules
 			ProtocolRule prule = (ProtocolRule)rule;
-			String srcPort = isReceive ? prule.getDstPort() : prule.getSrcPort();
-			String dstPort = isReceive ? prule.getSrcPort() : prule.getDstPort();
-			if (!srcPort.equals("any") &&
-			    packet.getSourcePort() != Integer.parseInt(srcPort)) {
-				udpMap.remove(rule);
+			String sPort = isReceive ? prule.getDstPort() : prule.getSrcPort();
+			String dPort = isReceive ? prule.getSrcPort() : prule.getDstPort();
+			if (!sPort.equals("any") &&
+			    packet.getSourcePort() != Integer.parseInt(sPort)) {
 				continue;
 			}
-			if (!dstPort.equals("any") &&
-				packet.getDestinationPort() != Integer.parseInt(dstPort)) {
-				udpMap.remove(rule);
+			if (!dPort.equals("any") &&
+				packet.getDestinationPort() != Integer.parseInt(dPort)) {
 				continue;
 			}
 			
 			if (!prule.getIp().equals("any") &&
 				((isReceive && !packet.getSourceAddress().equals(prule.getIp())) ||
 				 (!isReceive && !packet.getDestinationAddress().equals(prule.getIp())))) {
-				udpMap.remove(rule);
 				continue;
 			}
-			Integer subRule = udpMap.get(rule);
-			if (subRule == null) {
-				subRule = 0;
-			}
-			String data = null;
-			try
-			{data=new String(packet.getData(),"ISO-8859-1");
-			}catch(Exception exc){exc.printStackTrace();}
-			SubRule srule = prule.getSubRule().get(subRule);
-			if ((isReceive && srule.isReceived() && srule.getPattern().matcher(data).find()) ||
-				(!isReceive && !srule.isReceived() && srule.getPattern().matcher(data).find())) {
-				if (subRule + 1 == prule.getSubRule().size()) {
-					System.out.println("Rule: " +rule.getName()+" UDP Packet # "+count);
-					udpMap.remove(rule);
+			// If the basic rules pass, take a look at the sub rules. If a rule
+			// repeats values multiple times, there may be multiple rule checks
+			// occurring at once, only at diferent stages. Check all of them now.
+			List<Integer> subRuleList = getRuleProgress(key, rule);
+			
+			subRuleList.add(0);
+			for (Integer subRule : subRuleList)
+			{
+				// Always remove because you are doing the check now.
+				// If it is part of a rule then the next subrule will
+				// be added to the list later if necessary.
+				subRuleList.remove(subRule);
+				
+				String data = null;
+				try
+				{
+					data=new String(packet.getData(),"ISO-8859-1");
 				}
-				else {
-					udpMap.put(rule, subRule+1);
-				}
-			}
-			else {
-				udpMap.remove(rule);
+				catch(Exception exc){exc.printStackTrace();}
+				
+				// If the subrule matches, either print the rule match
+				// text, or add the next subRule to the list so that it
+				// can be checked against the next packet.
+				SubRule srule = prule.getSubRule().get(subRule);
+				if ((isReceive && srule.isReceived() && 
+						srule.getPattern().matcher(data).find()) ||
+					(!isReceive && !srule.isReceived() && 
+						srule.getPattern().matcher(data).find())) {
+					if (subRule + 1 == prule.getSubRule().size()) {
+						System.out.println("Rule: " +rule.getName()+
+											" UDP Packet # "+count);
+					}
+					else {
+						subRuleList.add(subRule+1);
+					}
+				}	
 			}
 		}
 	}
+	/**
+	 * Get the index of the sub rules to check for the next UDP
+	 * packet.
+	 * 
+	 * @param key
+	 * @param rule
+	 * @return
+	 */
+	private List<Integer> getRuleProgress(String key, Rule rule)
+	{
+		UDPSession session = udpMap.get(key);
+		if (session == null)
+		{
+			session = new UDPSession();
+			udpMap.put(key, session);
+		}
+		
+		List<Integer> subRuleList = session.getUdpMap().get(rule);
+		if (subRuleList == null) {
+			subRuleList = new ArrayList<Integer>();
+			session.getUdpMap().put(rule, subRuleList);
+		}
+		return subRuleList;
+	}
 	
+	/**
+	 * Saves the rules by type so that non-applicable rules are not
+	 * checked.
+	 * 
+	 * @param rules
+	 */
 	private void cacheRules(List<Rule> rules) {
 		udpRules = new ArrayList<ProtocolRule>();
 		for (Rule rule : rules) {

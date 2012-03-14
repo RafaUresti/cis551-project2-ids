@@ -4,17 +4,38 @@ import java.util.List;
 import java.util.Map;
 
 import net.sourceforge.jpcap.net.TCPPacket;
+
+/**
+ * Class respsonible for matching TCP packets to TCP rules.
+ * 
+ * @author bbreck
+ *
+ */
 public class TCPRuleProcessor
 {
+	// Protocol rules.
 	private List<ProtocolRule> protocolRules;
+	
+	// Stream rules.
 	private List<StreamRule> streamRules;
-	private Map<String, Conversation> tcpMap;
+	
+	// Current TCP connections being tracked.
+	private Map<String, TCPSession> tcpMap;
+	
+	// The current host.
 	private String host;
+	
+	// Number of TCP packets seen so far.
 	private int count = 0;
 	
+	/**
+	 * Constructor that accepts a list of rules.
+	 * 
+	 * @param rules
+	 */
 	public TCPRuleProcessor(List<Rule> rules)
 	{
-		tcpMap = new HashMap<String, Conversation>();
+		tcpMap = new HashMap<String, TCPSession>();
 		
 		// Get the host.  It will be used to determine
 		// whether the data was sent or received.
@@ -47,9 +68,9 @@ public class TCPRuleProcessor
 				srcPort;
 		
 		// If the stream does not exist, create it now.
-		Conversation conversation = tcpMap.get(key);
+		TCPSession conversation = tcpMap.get(key);
 		if (conversation == null) {
-			conversation = new Conversation(host);
+			conversation = new TCPSession(host);
 			tcpMap.put(key, conversation);
 		}
 		conversation.addPacket(packet);
@@ -75,15 +96,19 @@ public class TCPRuleProcessor
 	 * @param stream
 	 * @throws Exception
 	 */
-	private void matchProtocolRules(Conversation stream) throws Exception {
+	private void matchProtocolRules(TCPSession stream) throws Exception {
 		List<TCPPacket> packets = stream.getPackets();
+		
 		for (int pindex=0;pindex<packets.size();pindex++) {
 			boolean keepPacket = false;
 			for (ProtocolRule rule : protocolRules) {
 				if (!stream.containsRule(rule) && basicCheck(rule, packets.get(0))) {
+					// number of packets (i.e. ACKs) that have been ignored
 					int skipCount = 0;
 					for (int subIndex=0;subIndex<rule.getSubRule().size();subIndex++) {
-						if (pindex+subIndex+skipCount < packets.size() && !isSkippable(packets.get(pindex+subIndex+skipCount))) {
+						if (pindex+subIndex+skipCount < packets.size() && 
+							!isSkippable(packets.get(pindex+subIndex+skipCount))) {
+							
 							TCPPacket packet = packets.get(pindex+subIndex+skipCount);
 							boolean isReceive = isReceived(packet);
 							String data=new String(packet.getData(),"ISO-8859-1");
@@ -125,27 +150,33 @@ public class TCPRuleProcessor
 	
 	/**
 	 * Method that determines whether the packet can be skipped in a
-	 * protocol comparison. This is true when the packet is an
+	 * protocol comparison. This is true when the packet is an ACK and
+	 * has no body.
 	 * 
 	 * @param packet
 	 * @return
 	 */
 	private boolean isSkippable(TCPPacket packet) {
 		boolean result = false;
-		if (packet.isAck() && (packet.getData() == null || packet.getData().length==0)) {
+		if (packet.isAck() && (packet.getData() == null || 
+				packet.getData().length==0)) {
 			result = true;
 		}
 		return result;
 	}
 	
-	private void matchStreamRules(Conversation c) throws Exception
+	private void matchStreamRules(TCPSession c) throws Exception
 	{
+		// If there are no packets, stop here.
 		if (c.getPackets().size() == 0)
 			return;
+		
+		// Iterate over the rules.
 		for (StreamRule rule : streamRules)
 		{
 			if (!c.containsRule(rule) && basicCheck(rule, c.getPackets().get(0)))
 			{
+				// If it is a receive rule, compare against the receive data.
 				if (rule.isReceive() && c.getRecvData() != null) {
 					String rec = new String (c.getRecvData(), "ISO-8859-1");
 					if (rule.getPattern().matcher(rec).find()) {
@@ -153,7 +184,7 @@ public class TCPRuleProcessor
 					}
 				}
 				
-				//Regular expression over what is sent
+				// If it is a send rule, compare against the send data.
 				else if (!rule.isReceive() && c.getSendData() != null) {
 					String sen = new String (c.getSendData(), "ISO-8859-1");	
 					if (rule.getPattern().matcher(sen).find()) {
@@ -164,7 +195,57 @@ public class TCPRuleProcessor
 		}
 	}
 	
-	private void flagRule(Rule rule, Conversation stream)
+	/**
+     * Compares all common aspects of rules to the packet (i.e. Source
+     * Port, Destination Port, Other IP Address).
+     * 
+     * @param rule
+     * @param packet
+     * @return
+     */
+    private boolean basicCheck(Rule rule, TCPPacket packet)
+    {
+            boolean isReceive = isReceived(packet);
+            String srcPort = isReceive ? rule.getDstPort() : rule.getSrcPort();
+            String dstPort = isReceive ? rule.getSrcPort() : rule.getDstPort();
+            if (!srcPort.equals("any") &&
+                packet.getSourcePort() != Integer.parseInt(srcPort))
+            {
+                    return false;
+            }
+            if (!dstPort.equals("any") &&
+                    packet.getDestinationPort() != Integer.parseInt(dstPort))
+            {
+                    return false;
+            }
+
+            if (!rule.getIp().equals("any") &&
+                    ((isReceive && !packet.getSourceAddress().equals(rule.getIp())) ||
+                     (!isReceive && !packet.getDestinationAddress().equals(rule.getIp()))))
+            {
+                    return false;
+            }
+            return true;
+    }
+    
+    /**
+	 * Determines if the host was the receiver of the packet.
+	 * 
+	 * @param packet
+	 * @return
+	 */
+	private boolean isReceived(TCPPacket packet)
+	{
+		return packet.getDestinationAddress().equals(host);
+	}
+	
+	/**
+	 * Print the fact that a rule was found, and add the rule to the stream.
+	 * 
+	 * @param rule
+	 * @param stream
+	 */
+	private void flagRule(Rule rule, TCPSession stream)
 	{
 		System.out.println("Rule: " +rule.getName()+ " TCP Packet # "+count);
 		stream.addRule(rule);
@@ -208,50 +289,6 @@ public class TCPRuleProcessor
 		
 		// Compare counts and return the result.
 		return packetCount == ruleCount;
-	}
-	
-	/**
-	 * Compares all common aspects of rules to the packet (i.e. Source
-	 * Port, Destination Port, Other IP Address).
-	 * 
-	 * @param rule
-	 * @param packet
-	 * @return
-	 */
-	private boolean basicCheck(Rule rule, TCPPacket packet)
-	{
-		boolean isReceive = isReceived(packet);
-		String srcPort = isReceive ? rule.getDstPort() : rule.getSrcPort();
-		String dstPort = isReceive ? rule.getSrcPort() : rule.getDstPort();
-		if (!srcPort.equals("any") &&
-		    packet.getSourcePort() != Integer.parseInt(srcPort))
-		{
-			return false;
-		}
-		if (!dstPort.equals("any") &&
-			packet.getDestinationPort() != Integer.parseInt(dstPort))
-		{
-			return false;
-		}
-		
-		if (!rule.getIp().equals("any") &&
-			((isReceive && !packet.getSourceAddress().equals(rule.getIp())) ||
-			 (!isReceive && !packet.getDestinationAddress().equals(rule.getIp()))))
-		{
-			return false;
-		}
-		return true;
-	}
-	/**
-	 * Determines if this packet is being received by the host or
-	 * set by the host (True=Received, False=Sent).
-	 * 
-	 * @param packet
-	 * @return
-	 */
-	public boolean isReceived(TCPPacket packet)
-	{
-		return packet.getDestinationAddress().equals(host);
 	}
 	
 	/**

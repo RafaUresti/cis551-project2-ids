@@ -5,6 +5,11 @@ import net.sourceforge.jpcap.net.Packet;
 import net.sourceforge.jpcap.net.TCPPacket;
 import net.sourceforge.jpcap.net.UDPPacket;
 
+/**
+ * Packet listener that passes the packets to the
+ * appropriate processor.
+ *
+ */
 public class IDSPacketListener implements PacketListener
 {
 	private UDPRuleProcessor udpProcessor;	

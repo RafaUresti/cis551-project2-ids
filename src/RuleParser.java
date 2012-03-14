@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+/**
+ * Class responsible for parsing rule files. 
+ *
+ */
 public class RuleParser
 {
 	private String filename;
@@ -30,13 +34,16 @@ public class RuleParser
 			s= new Scanner(new BufferedReader(new FileReader(filename)));
 			while(s.hasNextLine()){
 				String t =s.nextLine();
+				// Get the host.
 				if(t.contains("host"))
 					host =initRule(t);
 				else if(!t.isEmpty()){
+					// Get the name of the rule.
 					if(t.contains("name")){					
 						String[] name = t.split("=");
 						ruleName = name[1];
 					}
+					// Process a protocol rule.
 					else if(t.contains("protocol")) {
 						Rule rule = createProtocolRule(s);
 						rule.setName(ruleName);
@@ -44,6 +51,7 @@ public class RuleParser
 						rules.add(rule);
 					}
 
+					// Process a stream rule.
 					else if(t.contains("tcp_stream")) {
 						Rule rule = createStreamRule(s);
 						rule.setName(ruleName);
@@ -60,6 +68,12 @@ public class RuleParser
 				s.close();
 		}
 	}
+	/**
+	 * Parses a protocol rule.
+	 * 
+	 * @param s
+	 * @return
+	 */
 	private ProtocolRule createProtocolRule(Scanner s)
 	{
 		ProtocolRule pr = new ProtocolRule();
@@ -92,26 +106,44 @@ public class RuleParser
 		return pr;
 	}
 	
+	/**
+	 * Parses a sub rule.
+	 * 
+	 * @param line
+	 * @param s
+	 * @return
+	 */
 	private SubRule createSubRule(String[] line, Scanner s)
 	{
 		SubRule sub = new SubRule();
 		char[] flags = null; 
+			// Get the flags.
 			if(line.length > 2){ //has flags
 				flags = line[2].toCharArray();
 			}
+			// Determine whether it is a send or receive.
 			if(line[0].trim().equals("recv")){
 				sub.setReceived(true);
 			}
 			String[] reg = line[1].trim().split("with");
 			String data = reg[0].trim();
 			sub.setData(data.substring(1, data.length()-1));
+			// If there are flags set them.
 			if(flags!=null)
 				sub.setFlags(flags);
+			// If the with clause was specified and no flags
+			// were set, add an empty array.
 			else if (reg.length == 2)
 				sub.setFlags(new char[0]);
 		return sub;
 	}
 	
+	/**
+	 * Parse a stream rule.
+	 * 
+	 * @param s
+	 * @return
+	 */
 	private StreamRule createStreamRule(Scanner s)
 	{
 		StreamRule sr = new StreamRule();
@@ -130,10 +162,12 @@ public class RuleParser
 				if(title.equals("ip"))
 					sr.setIp(value);
 				if(title.equals("send"))
+					// Strip the quotes.
 					sr.setData(value.substring(1, value.length()-1));
 				if(title.equals("recv"))
 				{
 					sr.setData(value.substring(1, value.length()-1));
+					// Identify the rule as a receive rule.
 					sr.setReceive(true);
 				}
 			}
@@ -146,6 +180,12 @@ public class RuleParser
 		return sr;
 	}
 
+	/**
+	 * Get the host from the file.
+	 * 
+	 * @param nextLine
+	 * @return
+	 */
 	private String initRule(String nextLine) {
 		String[] h = nextLine.split("=");
 		String value = h[1];
