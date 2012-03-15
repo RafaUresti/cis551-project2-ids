@@ -1,0 +1,23 @@
+Pings responded:This rule checks if ping requests receive a response or not. It is designed to test a protocol rule on a udp packet
+test with trace_s3.pcap
+
+403 Forbidden Stream: This rule checks if the host is trying
+to access pages it does not have permissions to by checking the responses from a webserver with the 403 code.
+It is designed to test the stream rules and the tcp reconstruction since the forbidden message could be wrapped in
+different packets. The '403 forbidden' is a test for the correctness of protocol rules by matching the text
+in a single packet whereas the stream rule applies the reconstruction and matches against all the packets in the trace.
+test with trace_s2.pcap
+
+404 Not Found: This rule checks if the host is trying
+to access pages that do not exist by checking the responses from a webserver with the 404 code.
+It is designed to test the stream rules and the tcp reconstruction since the 404 message could be contained in
+different packets.It also tests matching of flags in sequence; the 404 reverse rules tests that it does not flag the packets if the flags
+are not in order.
+test with trace_s2.pcap
+
+Welcome : A test rule that checks for the string 'welcome!' in a page. It is designed to test the protocol rule on a tcp packet.
+test with trace_s1.pcap
+
+Page Request : This rule is designed to test a protocol rule with flags and to also test when packets are being sent, since the rest of the test cases
+have been implemented for when the host is on the receiving end.
+test with trace_s1.pcap
