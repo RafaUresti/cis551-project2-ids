@@ -1,9 +1,9 @@
 
-JAVAC = javac -classpath lib/jpcap.jar	
+JAVAC = javac -classpath lib/jpcap.jar -d	
 
 compile:
-	$(JAVAC) -b bin src/*.java
+	$(JAVAC) bin src/*.java
 clean:
 	$(RM) bin/*.class
 run:
-	./run.sh resource/trace1.pcap resource/rules.txt
+	java -classpath bin:$(CLASSPATH) $(TRACE) $(RULES)
