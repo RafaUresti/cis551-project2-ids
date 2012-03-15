@@ -64,14 +64,14 @@ public class UDPRuleProcessor {
 			
 			// Compare against the basic rules
 			ProtocolRule prule = (ProtocolRule)rule;
-			String sPort = isReceive ? prule.getDstPort() : prule.getSrcPort();
-			String dPort = isReceive ? prule.getSrcPort() : prule.getDstPort();
-			if (!sPort.equals("any") &&
-			    packet.getSourcePort() != Integer.parseInt(sPort)) {
+			int sPort = isReceive ? packet.getDestinationPort() : packet.getSourcePort();
+			int dPort = isReceive ? packet.getSourcePort() : packet.getDestinationPort();
+			if (!rule.getSrcPort().equals("any") &&
+			    sPort != Integer.parseInt(rule.getSrcPort())) {
 				continue;
 			}
-			if (!dPort.equals("any") &&
-				packet.getDestinationPort() != Integer.parseInt(dPort)) {
+			if (!rule.getDstPort().equals("any") &&
+				dPort != Integer.parseInt(rule.getDstPort())) {
 				continue;
 			}
 			
