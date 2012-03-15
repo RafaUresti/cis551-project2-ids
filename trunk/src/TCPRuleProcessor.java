@@ -223,15 +223,15 @@ public class TCPRuleProcessor
     private boolean basicCheck(Rule rule, TCPPacket packet)
     {
             boolean isReceive = isReceived(packet);
-            String srcPort = isReceive ? rule.getDstPort() : rule.getSrcPort();
-            String dstPort = isReceive ? rule.getSrcPort() : rule.getDstPort();
-            if (!srcPort.equals("any") &&
-                packet.getSourcePort() != Integer.parseInt(srcPort))
+            int srcPort = isReceive ? packet.getDestinationPort() : packet.getSourcePort();
+            int dstPort = isReceive ? packet.getSourcePort() : packet.getDestinationPort();
+            if (rule.getSrcPort().equals("any") &&
+                Integer.parseInt(rule.getSrcPort()) != srcPort)
             {
                     return false;
             }
-            if (!dstPort.equals("any") &&
-                    packet.getDestinationPort() != Integer.parseInt(dstPort))
+            if (!rule.getDstPort().equals("any") &&
+                    Integer.parseInt(rule.getDstPort()) != dstPort)
             {
                     return false;
             }
