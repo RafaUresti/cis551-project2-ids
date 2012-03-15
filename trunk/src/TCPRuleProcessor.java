@@ -62,6 +62,8 @@ public class TCPRuleProcessor
 		int dstPort = isReceive ? packet.getDestinationPort() : packet.getSourcePort();
 		int srcPort = isReceive ? packet.getSourcePort() :packet.getDestinationPort();
 		
+		
+		
 		//We generate a key which will identify the stream
 		String key = address + ":" +
 				dstPort + ":" +
@@ -223,8 +225,9 @@ public class TCPRuleProcessor
     private boolean basicCheck(Rule rule, TCPPacket packet)
     {
             boolean isReceive = isReceived(packet);
-            int srcPort = isReceive ? packet.getDestinationPort() : packet.getSourcePort();
-            int dstPort = isReceive ? packet.getSourcePort() : packet.getDestinationPort();
+            int dstPort = isReceive ? packet.getDestinationPort() : packet.getSourcePort();
+            int srcPort = isReceive ? packet.getSourcePort() : packet.getDestinationPort();
+            
             if (!rule.getSrcPort().equals("any") &&
                 Integer.parseInt(rule.getSrcPort()) != srcPort)
             {
