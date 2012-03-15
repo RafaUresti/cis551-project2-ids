@@ -225,7 +225,7 @@ public class TCPRuleProcessor
             boolean isReceive = isReceived(packet);
             int srcPort = isReceive ? packet.getDestinationPort() : packet.getSourcePort();
             int dstPort = isReceive ? packet.getSourcePort() : packet.getDestinationPort();
-            if (rule.getSrcPort().equals("any") &&
+            if (!rule.getSrcPort().equals("any") &&
                 Integer.parseInt(rule.getSrcPort()) != srcPort)
             {
                     return false;
